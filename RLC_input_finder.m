@@ -1,6 +1,6 @@
 clear;close all;clc;
 % 
- 5
+ 
 
 % sim("RLC_model_2_input_finder.slx")
 
