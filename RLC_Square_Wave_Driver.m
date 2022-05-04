@@ -1,5 +1,28 @@
+%%
 clear;close all;clc;
 
+RunTime = .004;
+% [width, height] = squareInput(19100,600);
+open("RLC_model_1.slx")
+% Set Variables
+t = 0:1e-6:RunTime;
+% start = 18000;
+% stop = 22000;
+i = 21724;
+period = 1/i;
+steps = 30;
+amplitude = 600;
+duty = 65;
+Model = "RLC_model_1.slx";
+input = 600*square(2*pi*i*t,duty);
+simin.time = t';
+simin.signals.values = input';
+sim("RLC_model_1.slx", "StopTime", "RunTime")
+
+
+
+%%
+clear; close all; clc
 
 %Sim init
 RunTime = .004;
@@ -7,11 +30,11 @@ RunTime = .004;
 open("RLC_model_1.slx")
 % Set Variables
 t = 0:1e-6:RunTime;
-start = 16000;
+start = 18000;
 stop = 22000;
-steps = 50;
+steps = 30;
 amplitude = 600;
-duty = 40;
+duty = 65;
 Model = "RLC_model_1.slx";
 
 stepSize = round((stop-start)/steps);
@@ -21,6 +44,7 @@ stepSize = round((stop-start)/steps);
     index = 1;
     for i = start:stepSize:stop
         Input = amplitude*square(2*pi*i*t,duty);
+        period = 1/i;
         simin.time = t';
         simin.signals.values = Input';
         sim(Model, "StopTime", "RunTime");
