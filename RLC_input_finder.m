@@ -7,7 +7,7 @@ clear;close all;clc;
 %t = ans.ScopeDataVoltages.time;
 %V = ans.ScopeDataVoltages.signals.values;
 
-[MaxCapVoltages, MaxLCurrent, Frequencies] = frequencyScan(18000, 600, 22000, 50);
+[MaxCapVoltages, MaxLCurrent, Frequencies] = frequencyScan(19000, 600, 19010, 2);
 plot(Frequencies, MaxLCurrent)
 xlabel("Frequencies")
 ylabel("Peak Current Through the Inductor")

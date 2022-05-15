@@ -1,11 +1,13 @@
 %%
 clear;close all;clc;
-[frequency, height] = sinToSquare(10, 600);
-frequency = double(frequency);
-t = 0:.1:5;
+[frequency, height] = sinToSquare(19000, 600);
+frequency = round(double(frequency));
+RunTime = .004;
+t = 0:1e-6:RunTime;
 f = height*square(2*pi*frequency*t,50);
-plot(t, f)
-
+simin.time = t';
+simin.signals.values = f';
+sim("Test_model.slx", "StopTime", "RunTime")
 
 
 %% +
@@ -81,7 +83,7 @@ function [newFrequency, height] = sinToSquare(frequency, amplitude)
     Area = int(amplitude*sin((2*pi*frequency)*x),0,Period/2);
     height = amplitude;
     width = Area/height;
-    newFrequency = (2*width).^-1;
+    newFrequency = (width).^-1;
 
 end
 
