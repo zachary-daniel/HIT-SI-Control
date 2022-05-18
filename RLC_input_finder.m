@@ -1,13 +1,13 @@
 clear;close all;clc;
 % 
  
-
+MODEL = "RLC_model_2_input_finder";
 % sim("RLC_model_2_input_finder.slx")
 
 %t = ans.ScopeDataVoltages.time;
 %V = ans.ScopeDataVoltages.signals.values;
 
-[MaxCapVoltages, MaxLCurrent, Frequencies] = frequencyScan(19000, 600, 19010, 2);
+[MaxCapVoltages, MaxLCurrent, Frequencies] = frequencyScan(19000, 600, 19010, 2, MODEL);
 plot(Frequencies, MaxLCurrent)
 xlabel("Frequencies")
 ylabel("Peak Current Through the Inductor")
@@ -40,8 +40,8 @@ ylabel("Peak Current Through the Inductor")
 
 
 %Functions below this Line
-function [MaxCapVoltageArray, MaxLCurrentArray, frequencies] = frequencyScan(initFreq, Amplitude, endFreq, steps)
-    open("RLC_model_2_input_finder.slx")
+function [MaxCapVoltageArray, MaxLCurrentArray, frequencies] = frequencyScan(initFreq, Amplitude, endFreq, steps, model)
+    open(model)
     stepSize = round((endFreq-initFreq)/steps);
     Amp = Amplitude;
     frequency = initFreq;
