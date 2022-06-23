@@ -4,7 +4,7 @@ close all; clc;
 Amplitude = 600;
 Frequency = 19000;
 RunTime = .004;
-sim("RLC_Sin_To_Square_w_H_Bridge.slx", "StopTime", "RunTime")
+sim("RLC_Sin_To_Square_Backwards.slx", "StopTime", "RunTime")
 time = ans.tout;
 voltage = ans.simout.signals.values;
 
@@ -40,9 +40,9 @@ open("RLC_with_HBrdige_forward_circuit.slx")
 simin.time = time;
 simin.signals.values = newVoltages;
 sim("RLC_with_HBrdige_forward_circuit.slx", "StopTime", "RunTime");
-%  plot(time, newVoltages)
-%  hold on
-%  plot(time, voltage, "r")
+plot(time, newVoltages)
+hold on
+plot(time, voltage, "r")
 
 
 
