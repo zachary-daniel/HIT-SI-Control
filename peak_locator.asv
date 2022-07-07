@@ -4,9 +4,8 @@ clear;close all; clc;
 Amplitude = 600;
 Frequency = 19000;
 RunTime = .004;
-SampleTime = 1e-7;
 sim("RLC_Sin_To_Square_Backwards.slx", "StopTime", "RunTime")
-% sim("RLC_Sin_To_Square_Backwards.slx")
+sim("RLC")
 time = ans.tout;
 voltage = ans.simout.signals.values;
 

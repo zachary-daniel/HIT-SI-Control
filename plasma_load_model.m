@@ -5,6 +5,37 @@ Amplitude = 600;
 Frequency = 19000;
 RunTime = .004;
 SampleTime = 1e-7;
+Lp = 1.85e-6; 
+L1 = 1.4e-6; %H
+L2 = 1.5e-6; %H
+C = 95e-6; % F
+R1 = .0025; %Ohm
+R2 = .005; % Ohm
+R3 = .005;% Ohm
+dt = 1e-5;
+A = [(-1/L1)*R1-(1/L1)*R2 -1/L1 (-1/L1)*R2;
+    1/C 0 -1/C;
+    (1/L2)*R2 1/L2 (-1/L2)*R3-(1/L2)*R2 ];
+B = [1/L1;
+    0;
+    0;];
+C = [0,0,1];
+D = 0;
+% states = {"x1", "x2", "x3"};
+% inputs = {"v(t)"};
+% outputs = states;
+% sysc = ss(A,B,C,D, "statename", states,"inputname", inputs, "outputname", outputs);
+
+
+% % sys_d = c2d(sysc.dt, 'zoh');
+% Ad = sys_d.A;
+% Bd = sys_d.B;
+% Cd = sys_d.B;
+% Dd = sys_d.D;
+% Qvec = [.001 .001 .001];
+Q = .1;
+R = .1;
+G = [1;1;1];
 sim("RLC_Sin_To_Square_Backwards.slx", "StopTime", "RunTime")
 % sim("RLC_Sin_To_Square_Backwards.slx")
 time = ans.tout;
@@ -38,10 +69,10 @@ troughs = -troughs;
 
 % Equivalent Sine wave area in dis
 [newVoltages] = toSquare(voltage, nada, troughs, peaks, nada_times, trough_times, peak_times, Amplitude);
-open("RLC_with_HBrdige_forward_circuit.slx")
+open("Vaccum_circuit_w_load_forward.slx")
 simin.time = time;
 simin.signals.values = newVoltages;
-sim("RLC_with_HBrdige_forward_circuit.slx", "StopTime", "RunTime");
+sim("Vaccum_circuit_w_load_forward.slx", "StopTime", "RunTime");
 plot(time, newVoltages)
 hold on
 plot(time, voltage, "r")

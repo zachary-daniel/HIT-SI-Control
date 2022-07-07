@@ -1,0 +1,10 @@
+clear;close all;clc;
+
+% sim init
+Amplitude = 600;
+Frequency = 19000;
+RunTime = .001;
+sim("Vaccum_circuit_w_noise_backwards", "StopTime", "RunTime");
+sim("Vaccum_circuit_w_noise_backwards.slx");
+time = ans.tout;
+noiseyCurrents = ans.

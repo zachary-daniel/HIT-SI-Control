@@ -1,41 +1,63 @@
-clear;close all; clc;
+% %% 
+% clear;close all;clc;
+% 
+% % sim init
+% Amplitude = 600;
+% Frequency = 19000;
+% RunTime = .001;
+% sim("Vaccum_circuit_w_noise_backwards", "StopTime", "RunTime");
+% % sim("Vaccum_circuit_w_noise_backwards.slx");
+% time = ans.tout;
+% noiseyCurrents = ans.noiseyCurrents.signals.values;
+% plot(time,noiseyCurrents)
+
+
+
+
 %% Initialize data and plot to make sure everything is gucci
 % declare time and voltage for our data
+clear;close all;clc;
 Amplitude = 600;
 Frequency = 19000;
 RunTime = .004;
 SampleTime = 1e-7;
-sim("RLC_Sin_To_Square_Backwards.slx", "StopTime", "RunTime")
-% sim("RLC_Sin_To_Square_Backwards.slx")
+sim("Vaccum_circuit_w_noise_backwards", "StopTime", "RunTime");
 time = ans.tout;
 voltage = ans.simout.signals.values;
-
+figure(1)
+plot(time, voltage);
+hold on
 %Locate peaks, troughs, and nada, and change the location data into time
 %data
-
+deNoise = 20;
+%Denoising means we don't have to do findpeaks for the zero times???
+voltage(voltage<deNoise & voltage > -deNoise) = 0;
 [peaks, loc_peaks] = findpeaks(voltage); % Peaks
 [troughs, loc_troughs] = findpeaks(-voltage); %Troughs
 [peak_times] = locsToTimes(loc_peaks, time); %Peak times
 [trough_times] = locsToTimes(loc_troughs, time); %Trough times
-[nada, loc_nada] = findpeaks(-(abs(voltage))); % nada
-[nada_times] = locsToTimes(loc_nada, time); % nada times
+%[nada, loc_nada] = findpeaks(-(abs(voltage))); % nada
+%[nada_times] = locsToTimes(loc_nada, time); % nada times
+[loc_nada] = find(voltage == 0);
+nada = voltage(voltage == 0);
+[nada_times] = locsToTimes(loc_nada, time);
 troughs = -troughs;
 %Plot the wave with peaks, nada, troughs
-% figure(1)
-% title("Peaks, Troughs, nada of Sine Wave")
-% xlabel("Time")
-% ylabel("Amplitude")
-% plot(time, voltage, "Color", "g")
-% hold on
-% plot(trough_times, troughs, "ok")
-% hold on
-% plot(peak_times, peaks, "or")
-% hold on
-% plot(nada_times, nada, "ob")
-% legend("voltage", "Troughs", "Peaks", "nada")
-% figure(2)
-% plot(time, -abs(voltage))
-
+figure(2)
+title("Peaks, Troughs, nada of Sine Wave")
+xlabel("Time")
+ylabel("Amplitude")
+plot(time, voltage, "Color", "g")
+hold on
+plot(trough_times, troughs, "ok")
+hold on
+plot(peak_times, peaks, "or")
+hold on
+plot(nada_times, nada, "ob")
+legend("voltage", "Troughs", "Peaks", "nada")
+figure(3)
+plot(time, voltage)
+%% 
 % Equivalent Sine wave area in dis
 [newVoltages] = toSquare(voltage, nada, troughs, peaks, nada_times, trough_times, peak_times, Amplitude);
 open("RLC_with_HBrdige_forward_circuit.slx")
@@ -52,6 +74,7 @@ plot(time, voltage, "r")
 
 
 %Functions below this line
+
 
 function [ts] = locsToTimes(locs, time)
     for i = 1:length(locs)
@@ -104,8 +127,8 @@ function [newValues] = toSquare(values, nada, troughs, peaks, nada_times, trough
     Amplitude = 600;
     for i = 1:length(Areas)
         width = abs(Areas(i)/Amplitude);
-        b1 = round((extrema_times(i)-width/2)/1e-7);
-        b2 = round((extrema_times(i) + width/2)/1e-7);
+        b1 = round((extrema_times(i)-width/2)/SampleTime);
+        b2 = round((extrema_times(i) + width/2)/SampleTime);
         if Areas(i) < 0
             newValues(b1:b2,1) = -Amplitude;
         else 
