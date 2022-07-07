@@ -8,34 +8,42 @@ SampleTime = 1e-7;
 Lp = 1.85e-6; 
 L1 = 1.4e-6; %H
 L2 = 1.5e-6; %H
-C = 95e-6; % F
+Cap = 96e-6; % F
 R1 = .0025; %Ohm
 R2 = .005; % Ohm
 R3 = .005;% Ohm
-dt = 1e-5;
-A = [(-1/L1)*R1-(1/L1)*R2 -1/L1 (-1/L1)*R2;
-    1/C 0 -1/C;
-    (1/L2)*R2 1/L2 (-1/L2)*R3-(1/L2)*R2 ];
+dT = 1e-7;
+A = [(-1/L1*(R1+R2)), -1/L1, R2*1/L1;
+     1/Cap, 0, -1/Cap;
+     (-1/L2)*R2, 1/L2, (-1/L2)*(R3-R2)];
 B = [1/L1;
     0;
     0;];
 C = [0,0,1];
+
 D = 0;
-% states = {"x1", "x2", "x3"};
-% inputs = {"v(t)"};
-% outputs = states;
-% sysc = ss(A,B,C,D, "statename", states,"inputname", inputs, "outputname", outputs);
+states = {'x1', 'x2', 'x3'};
+inputs = {'v(t)'}; 
+outputs = {'x3'};
+%continuous time system
+sysc = ss(A,B,C,D, "statename", states,"inputname", inputs, "outputname", outputs);
 
+%Discrete Time System
+sys_d = c2d(sysc, dT, 'zoh');
 
-% % sys_d = c2d(sysc.dt, 'zoh');
-% Ad = sys_d.A;
-% Bd = sys_d.B;
-% Cd = sys_d.B;
-% Dd = sys_d.D;
-% Qvec = [.001 .001 .001];
-Q = .1;
+Ad = sys_d.A;
+Bd = sys_d.B;
+Cd = sys_d.C;
+Dd = sys_d.D;
+
+G = eye(3);
+H = zeros(3,3);
+
+Q = diag(.1*ones(1,3));
 R = .1;
-G = [1;1;1];
+
+%% Run this to actually do the Sim and skip all the Sim init stuff
+close all;
 sim("RLC_Sin_To_Square_Backwards.slx", "StopTime", "RunTime")
 % sim("RLC_Sin_To_Square_Backwards.slx")
 time = ans.tout;
@@ -73,14 +81,55 @@ open("Vaccum_circuit_w_load_forward.slx")
 simin.time = time;
 simin.signals.values = newVoltages;
 sim("Vaccum_circuit_w_load_forward.slx", "StopTime", "RunTime");
+figure()
 plot(time, newVoltages)
 hold on
 plot(time, voltage, "r")
+xlabel("Time")
+ylabel("Input Voltage")
+title("Conversion of Sin wave to Square Wave for H-Bridge")
+legend("Output of Reverse Circuit", "Input to H-Bridge")
+
+% Grab Klaman Filter outputs and get corresponding values
+L2_Current = ans.L2Current.signals.values;
+C_Voltage = ans.CVoltage.signals.values;
+L1_Current = ans.L1Current.signals.values;
+L2_Current_Approx = ans.KalmanFilterOutputs.signals.values(:,1);
+C_Voltage_Approx = ans.KalmanFilterOutputs.signals.values(:,2);
+L1_Current_Approx = ans.KalmanFilterOutputs.signals.values(:,3);
+
+% Plot L2 vs. L2 Approx
+figure()
+plot(time, L2_Current, "LineWidth",2)
+hold on
+plot(time, L2_Current_Approx, "Linewidth", .25)
+xlabel("Time")
+ylabel("Current")
+title("Noisey Output vs. Kalman Filter Output for L2 Current")
+legend("True L2 Current with Noise", "Denoised L2 Current from KF", "Location", "northwest")
 
 
 
+% Plot C vs. C approx
+figure()
+plot(time, C_Voltage, "LineWidth", 5)
+hold on
+plot(time, C_Voltage_Approx, "Linewidth",.25)
+xlabel("Time")
+ylabel("Voltage")
+title("Noisey Output vs. Kalman Filter Output for C Voltage")
+legend("True C Voltage with Noise", "Denoised C Voltage from KF", "Location", "northwest")
 
 
+% Plot L1 Current vs. L1 Approx
+figure()
+plot(time, L1_Current, "LineWidth", 2)
+hold on
+plot(time, L1_Current_Approx, "Linewidth", .25)
+xlabel("Time")
+ylabel("Current")
+title("Noisey Output vs. Kalman Filter Output for L1 Current")
+legend("True L1 Current with Noise", "Denoised L1 Current from KF", "Location", "northwest")
 
 %Functions below this line
 
