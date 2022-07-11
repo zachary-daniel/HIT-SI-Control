@@ -13,13 +13,14 @@ R1 = .0025; %Ohm
 R2 = .005; % Ohm
 R3 = .005;% Ohm
 dT = 1e-7;
-A = [(-1/L1*(R1+R2)), -1/L1, R2*1/L1;
+NoisePower = .2;
+A = [((-1/L1)*(R1+R2)), -1/L1, R2*1/L1;
      1/Cap, 0, -1/Cap;
-     (-1/L2)*R2, 1/L2, (-1/L2)*(R3-R2)];
+     (1/L2)*R2, 1/L2, (-1/L2)*(R3+R2)];
 B = [1/L1;
     0;
     0;];
-C = [0,0,1];
+C = [0,1,0];
 
 D = 0;
 states = {'x1', 'x2', 'x3'};
@@ -27,6 +28,10 @@ inputs = {'v(t)'};
 outputs = {'x3'};
 %continuous time system
 sysc = ss(A,B,C,D, "statename", states,"inputname", inputs, "outputname", outputs);
+A = sysc.A;
+B = sysc.B;
+C = sysc.C;
+D = sysc.D;
 
 %Discrete Time System
 sys_d = c2d(sysc, dT, 'zoh');
@@ -40,7 +45,7 @@ G = eye(3);
 H = zeros(3,3);
 
 Q = diag(.1*ones(1,3));
-R = .1;
+R = .05;
 
 %% Run this to actually do the Sim and skip all the Sim init stuff
 close all;
@@ -76,6 +81,8 @@ troughs = -troughs;
 % plot(time, -abs(voltage))
 
 % Equivalent Sine wave area in dis
+simin_2.time = time;
+simin_2.signals.values = voltage;
 [newVoltages] = toSquare(voltage, nada, troughs, peaks, nada_times, trough_times, peak_times, Amplitude);
 open("Vaccum_circuit_w_load_forward.slx")
 simin.time = time;
