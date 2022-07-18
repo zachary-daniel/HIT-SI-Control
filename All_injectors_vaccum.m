@@ -7,6 +7,7 @@ RunTime = .004;
 SampleTime = 1e-7;
 Lp = 1.85e-6; 
 L1 = 1.4e-6; %H
+L1_V = 4.832e-7; % H
 L2 = 1.5e-6; %H
 Cap = 96e-6; % F
 R1 = .0025; %Ohm
@@ -16,7 +17,7 @@ dT = 1e-7;
 NoisePower = .2;
 A = [((-1/L1)*(R1+R2)), -1/L1, R2*1/L1;
      1/Cap, 0, -1/Cap;
-     (1/L2)*R2, 1/L2, (-1/L2)*(R3+R2)];
+     (1/L2)*R2, 1/L2, (-1/L2)*(R3-R2)];
 B = [1/L1;
     0;
     0;];
@@ -86,14 +87,12 @@ troughs = -troughs;
 % figure(2)
 % plot(time, -abs(voltage))
 
-% Equivalent Sine wave area in dis
-simin_2.time = time;
-simin_2.signals.values = voltage;
+
 [newVoltages] = toSquare(voltage, nada, troughs, peaks, nada_times, trough_times, peak_times, Amplitude);
-open("Vaccum_circuit_w_load_forward_7_11.slx")
+open("Vaccum_circuits_all_injectors.slx")
 simin.time = time;
 simin.signals.values = newVoltages;
-sim("Vaccum_circuit_w_load_forward_7_11.slx", "StopTime", "RunTime");
+sim("Vaccum_circuits_all_injectors.slx", "StopTime", "RunTime");
 figure()
 plot(time, newVoltages)
 hold on
