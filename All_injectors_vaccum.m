@@ -2,29 +2,40 @@ clear;close all; clc;
 %% Initialize data and plot to make sure everything is gucci
 % declare time and voltage for our data
 Amplitude = 600;
-Frequency = 19000;
+Frequency = 17500;
 RunTime = .004;
 SampleTime = 1e-7;
 Lp = 1.85e-6; 
 L1 = 1.4e-6; %H
 L1_V = 4.832e-7; % H
 L2 = 1.5e-6; %H
+M = L2/10;
+I = L2-M;
 Cap = 96e-6; % F
 R1 = .0025; %Ohm
 R2 = .005; % Ohm
 R3 = .005;% Ohm
 dT = 1e-7;
-NoisePower = .2;
-A = [((-1/L1)*(R1+R2)), -1/L1, R2*1/L1;
-     1/Cap, 0, -1/Cap;
-     (1/L2)*R2, 1/L2, (-1/L2)*(R3-R2)];
-B = [1/L1;
-    0;
-    0;];
-C = [0,0,1];
+NoisePower = .1;
+A = [((-1/L1)*(R1+R2)), -1/L1, R2*1/L1, 0, 0, 0, 0;
+     1/Cap, 0, -1/Cap, 0, 0, 0, 0;
+     0, 0, -R3/I, 0, 0, 0, 0;
+     0, 0, 0,((-1/L1)*(R1+R2)), -1/L1, R2*1/L1, 0;
+     0, 0, 0, 1/Cap, 0, -1/Cap, 0;
+     0, 0, 0, 0, 0, -R3/I, 0;
+     R2/M, 1/M, -R2/M, 0, 0, 0, 0];
+B = [1/L1, 0;
+    0, 0;
+    0, 0;
+    0, 1/L1;
+    0, 0;
+    0, 0;
+    0, 0];
+C = [0,0,1, 0, 0, 0, 0;
+    0, 0, 0, 0, 0, 1, 0];
 
 D = zeros( size(C,1), size(B,2) );
-states = {'x1', 'x2', 'x3'};
+states = {'x1', 'x2', 'x3', 'x1b', 'x2b', 'x3b', 'xm'};
 inputs = {'v(t)'}; 
 outputs = {'x3'};
 %continuous time system
@@ -45,8 +56,8 @@ Dd = sys_d.D;
 G = eye(3);
 H = zeros(3,3);
 
-Q = diag(.001*ones(1,3)); % disturbance covariance
-R = 1; % Noise covariance
+Q = diag(.001*ones(1,7)); % disturbance covariance
+R = .001; % Noise covariance
 time = (0:SampleTime:RunTime);
 backwards_vals = (Amplitude*sin(time*Frequency*2*pi));
 
@@ -103,18 +114,25 @@ title("Conversion of Sin wave to Square Wave for H-Bridge")
 legend("Output of Reverse Circuit", "Input to H-Bridge")
 
 % Grab Klaman Filter outputs and get corresponding values
-L2_Current = ans.L2Current.signals.values;
-C_Voltage = ans.CVoltage.signals.values;
-L1_Current = ans.L1Current.signals.values;
-L2_Current_Approx = ans.KalmanFilterOutputs.signals.values(:,3);
-C_Voltage_Approx = ans.KalmanFilterOutputs.signals.values(:,2);
-L1_Current_Approx = ans.KalmanFilterOutputs.signals.values(:,1);
+L2_Current_Flux_1 = ans.L2CurrentFlux1.signals.values;
+C_Voltage_Flux_1 = ans.CVoltageFlux1.signals.values;
+L1_Current_Flux_1 = ans.L1CurrentFlux1.signals.values;
+L2_Current_Approx_Flux_1= ans.KalmanFilterOutputsFlux1.signals.values(:,3);
+C_Voltage_Approx_Flux_1 = ans.KalmanFilterOutputsFlux1.signals.values(:,2);
+L1_Current_Approx_Flux_1 = ans.KalmanFilterOutputsFlux1.signals.values(:,1);
 
+L2_Current_Flux_2 = ans.L2CurrentFlux2.signals.values;
+C_Voltage_Flux_2 = ans.CVoltageFlux2.signals.values;
+L1_Current_Flux_2 = ans.L1CurrentFlux2.signals.values;
+
+L2_Current_Approx_Flux_2 = ans.KalmanFilterOutputsFlux1.signals.values(:,6);
+C_Voltage_Approx_Flux_2 = ans.KalmanFilterOutputsFlux1.signals.values(:,5);
+L1_Current_Approx_Flux_2 = ans.KalmanFilterOutputsFlux1.signals.values(:,4);
 % Plot L2 vs. L2 Approx
 figure()
-plot(time, L2_Current, "LineWidth",2)
+plot(time, L2_Current_Flux_1, "LineWidth",2)
 hold on
-plot(time, L2_Current_Approx, "Linewidth", .25)
+plot(time, L2_Current_Approx_Flux_1, "Linewidth", .25)
 xlabel("Time")
 ylabel("Current")
 title("Noisey Output vs. Kalman Filter Output for L2 Current")
@@ -125,9 +143,9 @@ legend("True L2 Current with Noise", "Denoised L2 Current from KF", "Location", 
 
 % Plot C vs. C approx
 figure()
-plot(time, C_Voltage, "LineWidth", 5)
+plot(time, C_Voltage_Flux_1, "LineWidth", 5)
 hold on
-plot(time, C_Voltage_Approx, "Linewidth",.25)
+plot(time, C_Voltage_Approx_Flux_1, "Linewidth",.25)
 xlabel("Time")
 ylabel("Voltage")
 title("Noisey Output vs. Kalman Filter Output for C Voltage")
@@ -137,13 +155,44 @@ legend("True C Voltage with Noise", "Denoised C Voltage from KF", "Location", "n
 
 % Plot L1 Current vs. L1 Approx
 figure()
-plot(time, L1_Current, "LineWidth", 2)
+plot(time, L1_Current_Flux_1, "LineWidth", 2)
 hold on
-plot(time, L1_Current_Approx, "Linewidth", .25)
+plot(time, L1_Current_Approx_Flux_1, "Linewidth", .25)
 xlabel("Time")
 ylabel("Current")
 title("Noisey Output vs. Kalman Filter Output for L1 Current")
 legend("True L1 Current with Noise", "Denoised L1 Current from KF", "Location", "northwest")
+
+% L2 Current Flux 2
+figure()
+plot(time, L2_Current_Flux_2, "LineWidth",2)
+hold on
+plot(time, L2_Current_Approx_Flux_2, "Linewidth", .25)
+xlabel("Time")
+ylabel("Current")
+title("Noisey Output vs. Kalman Filter Output for L2 Current (Flux 2)")
+legend("True L2 Current with Noise", "Denoised L2 Current from KF", "Location", "northwest")
+
+%C voltage Flux 2
+figure()
+plot(time, C_Voltage_Flux_2, "LineWidth", 5)
+hold on
+plot(time, C_Voltage_Approx_Flux_2, "Linewidth",.25)
+xlabel("Time")
+ylabel("Voltage")
+title("Noisey Output vs. Kalman Filter Output for C Voltage (Flux 2)")
+legend("True C Voltage with Noise", "Denoised C Voltage from KF", "Location", "northwest")
+
+% L1 Current Flux 2
+figure()
+plot(time, L1_Current_Flux_2, "LineWidth", 2)
+hold on
+plot(time, L1_Current_Approx_Flux_2, "Linewidth", .25)
+xlabel("Time")
+ylabel("Current")
+title("Noisey Output vs. Kalman Filter Output for L1 Current (Flux 2)")
+legend("True L1 Current with Noise", "Denoised L1 Current from KF", "Location", "northwest")
+
 
 % %%
 % close all;
