@@ -56,7 +56,7 @@ Dd = sys_d.D;
 G = eye(3);
 H = zeros(3,3);
 
-Q = diag(.001*ones(1,7)); % disturbance covariance
+Q = diag(.01*ones(1,7)); % disturbance covariance
 R = .001; % Noise covariance
 time = (0:SampleTime:RunTime);
 backwards_vals = (Amplitude*sin(time*Frequency*2*pi));
@@ -99,7 +99,7 @@ troughs = -troughs;
 % plot(time, -abs(voltage))
 
 
-[newVoltages] = toSquare(voltage, nada, troughs, peaks, nada_times, trough_times, peak_times, Amplitude);
+[newVoltages] = toSquare(voltage, nada, troughs, peaks, nada_times, trough_times, peak_times, Amplitude, SampleTime);
 open("Vaccum_circuits_all_injectors.slx")
 simin.time = time;
 simin.signals.values = newVoltages;
@@ -231,7 +231,7 @@ function [ts] = locsToTimes(locs, time)
     ts = locs;
 end
 
-function [newValues] = toSquare(values, nada, troughs, peaks, nada_times, trough_times, peak_times, Amplitude)
+function [newValues] = toSquare(values, nada, troughs, peaks, nada_times, trough_times, peak_times, Amplitude, SampleTime)
     Magic_number = 4/pi;
     num_waves = length(nada);
     Areas = zeros(num_waves,1);
@@ -274,8 +274,8 @@ function [newValues] = toSquare(values, nada, troughs, peaks, nada_times, trough
     Amplitude = 600;
     for i = 1:length(Areas)
         width = abs(Areas(i)/Amplitude);
-        b1 = round((extrema_times(i)-width/2)/1e-7);
-        b2 = round((extrema_times(i) + width/2)/1e-7);
+        b1 = round((extrema_times(i)-width/2)/SampleTime);
+        b2 = round((extrema_times(i) + width/2)/SampleTime);
         if Areas(i) < 0
             newValues(b1:b2,1) = -Amplitude;
         else 
