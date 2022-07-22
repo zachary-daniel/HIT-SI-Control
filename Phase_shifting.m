@@ -6,7 +6,7 @@ time = 0:dT:RunTime';
 plot(time/10, voltage)
 xlim([0, .0001])
 [nada, nada_locs] = findpeaks(-abs(voltage));
-[shifted_voltage] = phaseShift(voltage, 90, nada_locs);
+[shifted_voltage] = phaseShift(voltage, 180, nada_locs);
 plot(time, voltage)
 hold on
 plot(time, shifted_voltage)
@@ -20,6 +20,6 @@ function [newVals] = phaseShift(vals, shift, loc_nada) % takes shift in degrees
     period = loc_nada(3) - loc_nada(1);
     cut_off = round(period*(shift/360));
     newVals(1:end-cut_off) = vals(cut_off+1:end);
-    newVals(end-cut_off:end) = vals(cut_off+1:-1:1);
+    newVals(end-cut_off:end) = vals(end:-1:end-cut_off);
     
 end
