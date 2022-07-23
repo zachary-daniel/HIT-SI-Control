@@ -10,7 +10,7 @@ xlim([0, .0001])
 plot(time, voltage)
 hold on
 plot(time, shifted_voltage)
-xlim([0, .0001])
+xlim([.003 .004])
 %functions below this line
 
 
@@ -20,6 +20,6 @@ function [newVals] = phaseShift(vals, shift, loc_nada) % takes shift in degrees
     period = loc_nada(3) - loc_nada(1);
     cut_off = round(period*(shift/360));
     newVals(1:end-cut_off) = vals(cut_off+1:end);
-    newVals(end-cut_off:end) = vals(end:-1:end-cut_off);
+    newVals(end-cut_off:end) = -vals(end:-1:end-cut_off);
     
 end
