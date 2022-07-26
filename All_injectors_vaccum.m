@@ -1,8 +1,8 @@
 clear;close all; clc;
-%% Initialize data and plot to make sure everything is gucci
+% Initialize data and plot to make sure everything is gucci
 % declare time and voltage for our data
 Amplitude = 600;
-Frequency = 17500;
+Frequency = 19000;
 RunTime = .004;
 SampleTime = 1e-7;
 Lp = 1.85e-6; 
@@ -17,17 +17,26 @@ R2 = .005; % Ohm
 R3 = .005;% Ohm
 dT = 1e-7;
 NoisePower = .1;
-A = [((-1/L1)*(R1+R2)), -1/L1, R2*1/L1, 0, 0, 0, 0;
-     1/Cap, 0, -1/Cap, 0, 0, 0, 0;
-     0, 0, -R3/I, 0, 0, 0, 0;
-     0, 0, 0,((-1/L1)*(R1+R2)), -1/L1, R2*1/L1, 0;
-     0, 0, 0, 1/Cap, 0, -1/Cap, 0;
-     0, 0, 0, 0, 0, -R3/I, 0;
-     R2/M, 1/M, -R2/M, 0, 0, 0, 0];
+PhaseAngle = 110;
+Asub1 = [((-1/L1)*(R1+R2)), -1/L1, R2*1/L1;
+     1/Cap, 0, -1/Cap;
+     0, 0, -R3/I];
+Mrow = [R2/M, 1/M, -R2/M, 0, 0, 0, 0];
+Asquare = blkdiag(Asub1, Asub1);
+A = [Asquare, zeros(size(Asquare(:,1)))
+    Mrow;];
+% A = [((-1/L1)*(R1+R2)), -1/L1, R2*1/L1, 0, 0, 0, 0;
+%      1/Cap, 0, -1/Cap, 0, 0, 0, 0;
+%      0, 0, -R3/I, 0, 0, 0, 0;
+%      0, 0, 0,((-1/L1)*(R1+R2)), -1/L1, R2*1/L1, 0;
+%      0, 0, 0, 1/Cap, 0, -1/Cap, 0;
+%      0, 0, 0, 0, 0, -R3/I, 0;
+%      R2/M, 1/M, -R2/M, 0, 0, 0, 0];
+
 B = [1/L1, 0;
     0, 0;
     0, 0;
-    0, 1/L1;
+    0, 1/L1*(cos(PhaseAngle));
     0, 0;
     0, 0;
     0, 0];
@@ -72,6 +81,7 @@ sim("RLC_Sin_To_Square_Backwards.slx", "StopTime", "RunTime")
 time = ans.tout;
 voltage = ans.simout.signals.values;
 
+
 %Locate peaks, troughs, and nada, and change the location data into time
 %data
 
@@ -98,9 +108,16 @@ troughs = -troughs;
 % figure(2)
 % plot(time, -abs(voltage))
 
-
+[voltageShift] = phaseShift(voltage, PhaseAngle, loc_nada);
 [newVoltages] = toSquare(voltage, nada, troughs, peaks, nada_times, trough_times, peak_times, Amplitude, SampleTime);
+[newVoltageShift] = phaseShift(newVoltages, PhaseAngle, loc_nada);
+Sin_Wave_Flux_1.time = time;
+Sin_Wave_Flux_2.time = time;
+Sin_Wave_Flux_1.signals.values = voltage;
+Sin_Wave_Flux_2.signals.values = voltageShift;
 open("Vaccum_circuits_all_injectors.slx")
+shiftedSignal.time = time;
+shiftedSignal.signals.values = newVoltageShift;
 simin.time = time;
 simin.signals.values = newVoltages;
 sim("Vaccum_circuits_all_injectors.slx", "StopTime", "RunTime");
@@ -111,7 +128,7 @@ plot(time, voltage, "r")
 xlabel("Time")
 ylabel("Input Voltage")
 title("Conversion of Sin wave to Square Wave for H-Bridge")
-legend("Output of Reverse Circuit", "Input to H-Bridge")
+legend("Input to H-Bridge", "Output of Reverse Circuit")
 
 % Grab Klaman Filter outputs and get corresponding values
 L2_Current_Flux_1 = ans.L2CurrentFlux1.signals.values;
@@ -135,7 +152,7 @@ hold on
 plot(time, L2_Current_Approx_Flux_1, "Linewidth", .25)
 xlabel("Time")
 ylabel("Current")
-title("Noisey Output vs. Kalman Filter Output for L2 Current")
+title("Noisey Output vs. Kalman Filter Output for L2 Current (Flux 1)")
 legend("True L2 Current with Noise", "Denoised L2 Current from KF", "Location", "northwest")
 
 
@@ -148,7 +165,7 @@ hold on
 plot(time, C_Voltage_Approx_Flux_1, "Linewidth",.25)
 xlabel("Time")
 ylabel("Voltage")
-title("Noisey Output vs. Kalman Filter Output for C Voltage")
+title("Noisey Output vs. Kalman Filter Output for C Voltage (Flux 1)")
 legend("True C Voltage with Noise", "Denoised C Voltage from KF", "Location", "northwest")
 
 
@@ -160,7 +177,7 @@ hold on
 plot(time, L1_Current_Approx_Flux_1, "Linewidth", .25)
 xlabel("Time")
 ylabel("Current")
-title("Noisey Output vs. Kalman Filter Output for L1 Current")
+title("Noisey Output vs. Kalman Filter Output for L1 Current (Flux 1)")
 legend("True L1 Current with Noise", "Denoised L1 Current from KF", "Location", "northwest")
 
 % L2 Current Flux 2
@@ -232,14 +249,16 @@ function [ts] = locsToTimes(locs, time)
 end
 
 function [newValues] = toSquare(values, nada, troughs, peaks, nada_times, trough_times, peak_times, Amplitude, SampleTime)
-    Magic_number = 4/pi;
-    num_waves = length(nada);
-    Areas = zeros(num_waves,1);
+    Magic_number = 4/pi; % Magic number for getting area under sin curve without integrating
+    num_waves = length(nada); % number of individual peaks/troughs
+    Areas = zeros(num_waves,1); % pre-allocate area array
     first_maxima = 0;
     second_maxima = 0;
     first_maxima_times = 0;
     second_maxima_times = 0;
-    if trough_times(1) < peak_times(1)
+    last_extrema = 0;
+    last_extrema_time = 0;
+    if trough_times(1) < peak_times(1) % decide if first extrema is a peak or a trough
         first_maxima = troughs;
         first_maxima_times = trough_times;
         second_maxima = peaks;
@@ -250,7 +269,13 @@ function [newValues] = toSquare(values, nada, troughs, peaks, nada_times, trough
         second_maxima = troughs;
         second_maxima_times = trough_times;
     end
-    
+    if trough_times(end) < peak_times(end)
+        last_extrema = peaks(end);
+        last_extrema_time = peak_times(end);
+    else
+        last_extrema = troughs(end);
+        last_extrema_time = trough_times(end);
+    end
     extrema = zeros(length(troughs)+length(peaks), 1);
     extrema_times = zeros(length(trough_times)+length(peak_times),1);
     index = 1;
@@ -261,8 +286,8 @@ function [newValues] = toSquare(values, nada, troughs, peaks, nada_times, trough
         extrema_times(i+1,1) = second_maxima_times(index);
         index=index+1;
     end
-    extrema(end) = first_maxima(end);
-    extrema_times(end) = first_maxima_times(end);
+    extrema(end) = last_extrema;
+    extrema_times(end) = last_extrema_time;
     for i = 1:length(extrema)-1
         base = nada_times(i+1) - nada_times(i);
         Areas(i,1) = .5*base*extrema(i)*Magic_number;
