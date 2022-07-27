@@ -16,7 +16,7 @@ R1 = .0025; %Ohm
 R2 = .005; % Ohm
 R3 = .005;% Ohm
 dT = 1e-7;
-NoisePower = .1;
+NoisePower = .3;
 PhaseAngle = 110;
 Asub1 = [((-1/L1)*(R1+R2)), -1/L1, R2*1/L1;
      1/Cap, 0, -1/Cap;
@@ -36,7 +36,7 @@ A = [Asquare, zeros(size(Asquare(:,1)))
 B = [1/L1, 0;
     0, 0;
     0, 0;
-    0, 1/L1*(cos(PhaseAngle));
+    0, 1/L1;
     0, 0;
     0, 0;
     0, 0];
@@ -66,7 +66,7 @@ G = eye(3);
 H = zeros(3,3);
 
 Q = diag(.01*ones(1,7)); % disturbance covariance
-R = .001; % Noise covariance
+R = diag(.1*ones(1,2)); % Noise covariance
 time = (0:SampleTime:RunTime);
 backwards_vals = (Amplitude*sin(time*Frequency*2*pi));
 
@@ -108,13 +108,8 @@ troughs = -troughs;
 % figure(2)
 % plot(time, -abs(voltage))
 
-[voltageShift] = phaseShift(voltage, PhaseAngle, loc_nada);
 [newVoltages] = toSquare(voltage, nada, troughs, peaks, nada_times, trough_times, peak_times, Amplitude, SampleTime);
 [newVoltageShift] = phaseShift(newVoltages, PhaseAngle, loc_nada);
-Sin_Wave_Flux_1.time = time;
-Sin_Wave_Flux_2.time = time;
-Sin_Wave_Flux_1.signals.values = voltage;
-Sin_Wave_Flux_2.signals.values = voltageShift;
 open("Vaccum_circuits_all_injectors.slx")
 shiftedSignal.time = time;
 shiftedSignal.signals.values = newVoltageShift;
