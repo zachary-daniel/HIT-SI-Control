@@ -2,7 +2,7 @@ clear;close all; clc;
 % Initialize data and plot to make sure everything is gucci
 % declare time and voltage for our data
 Amplitude = 600;
-Frequency = 19100;
+Frequency = 18500;
 RunTime = .004;
 SampleTime = 1e-7;
 Lp = 1.85e-6; 
@@ -18,12 +18,10 @@ R2 = .005; % Ohm
 R3 = .005;% Ohm
 dT = 1e-7;
 NoisePower = .2;
-PhaseAngle = 0;
-Asub1 = [((-1/L1)*(R1+R2)), -1/L1, R2*1/L1;
-     1/Cap, 0, -1/Cap;
-     0, 0, -R3/I];
-Mrow = [R2/M, 1/M, -R2/M, 0, 0, 0, 0];
-Asquare = blkdiag(Asub1, Asub1);
+PhaseAngle1 = 160;
+PhaseAngle2 = 90;
+PhaseAngle3 = 60;
+
 scalar1 = 1/(L2-Mw)*(L2.^2-4*M.^2+2*L2*Mw+Mw.^2); %Scale factor in front of the entries to the A matrix that are affected by mutual inductance
 %A = [Asquare, zeros(size(Asquare(:,1)))
  %   Mrow;];
@@ -206,10 +204,16 @@ troughs = -troughs;
 % plot(time, -abs(voltage))
 
 [newVoltages] = toSquare(voltage, nada, troughs, peaks, nada_times, trough_times, peak_times, Amplitude, SampleTime);
-[newVoltageShift] = phaseShift(newVoltages, PhaseAngle, loc_nada);
+[newVoltageShift1] = phaseShift(newVoltages, PhaseAngle1, loc_nada);
+[newVoltageShift2] = phaseShift(newVoltages, PhaseAngle2, loc_nada);
+[newVoltageShift3] = phaseShift(newVoltages, PhaseAngle3, loc_nada);
 open("Vaccum_circuits_all_injectors.slx")
-shiftedSignal.time = time;
-shiftedSignal.signals.values = newVoltageShift;
+shiftedSignal1.time = time;
+shiftedSignal1.signals.values = newVoltageShift1;
+shiftedSignal2.time = time;
+shiftedSignal2.signals.values = newVoltageShift2;
+shiftedSignal3.time = time;
+shiftedSignal3.signals.values = newVoltageShift3;
 simin.time = time;
 simin.signals.values = newVoltages;
 sim("Vaccum_circuits_all_injectors.slx", "StopTime", "RunTime");
@@ -237,6 +241,9 @@ L1_Current_Flux_2 = ans.L1CurrentFlux2.signals.values;
 L2_Current_Approx_Flux_2 = ans.KalmanFilterOutputsFlux1.signals.values(:,6);
 C_Voltage_Approx_Flux_2 = ans.KalmanFilterOutputsFlux1.signals.values(:,5);
 L1_Current_Approx_Flux_2 = ans.KalmanFilterOutputsFlux1.signals.values(:,4);
+
+L1_Current_Approx_Flux_3 = ans.KalmanFilterOutputsFlux1.signals.values(:,7);
+L1_Current_Flux_3 = ans.L1CurrentFlux3.signals.values;
 % Plot L2 vs. L2 Approx
 figure()
 plot(time, L2_Current_Flux_1, "LineWidth",2)
