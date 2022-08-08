@@ -1,17 +1,17 @@
 clear;close all; clc;
 % Initialize data and plot to make sure everything is gucci
 % declare time and voltage for our data
+mdsopen('hitsiu', 220802016);
 Amplitude = 600;
-Frequency = 18500;
+Amplitude1 = 600;
+Frequency = double(mdsvalue('\sihi_freq'));
 RunTime = .004;
 SampleTime = 1e-7;
 Lp = 1.85e-6; 
-L1 = 1.4e-6; %H
-L1_V = 4.832e-7; % H
-L2 = 1.5e-6; %H
-M = L2/5;
-Mw = M/5;
-I = L2-M;
+L1 = (1.4e-6); %H
+L2 = 2.0462e-6; %H
+M = .5*2.8343e-7;
+Mw = .5*2.5209e-7;
 Cap = 96e-6; % F
 R1 = .0025; %Ohm
 R2 = .005; % Ohm
@@ -23,18 +23,7 @@ PhaseAngle2 = 90;
 PhaseAngle3 = 60;
 
 scalar1 = 1/(L2-Mw)*(L2.^2-4*M.^2+2*L2*Mw+Mw.^2); %Scale factor in front of the entries to the A matrix that are affected by mutual inductance
-%A = [Asquare, zeros(size(Asquare(:,1)))
- %   Mrow;];
 
-% 
-% A = [((-1/L1)*(R1+R2)), -1/L1, R2*1/L1, 0, 0, 0;
-%      1/Cap, 0, -1/Cap, 0, 0, 0;
-%      (-L2*R2)/d1, -L2/d1,(L2*(R3+R3))/d1, M*R2/d1, M/d1, M*(-R2-R3)/d1;
-%      0, 0, 0,((-1/L1)*(R1+R2)), -1/L1, R2*1/L1;
-%      0, 0, 0, 1/Cap, 0, -1/Cap;
-%      -M*R2/-d1, -M/-d1, M*(R2+R3)/-d1, L2*R2/-d1, L2/-d1, L2*(-R2-R3)/-d1;];
-
-% Individual entries for x3 row in the A matrix
 x3a =  (-L2.^2)*R2+(2*M.^2)*R2-L2*Mw*R2;
 x3b = (-L2.^2)+2*M.^2-L2*Mw;
 x3c = (L2.^2)*R2-(2*M.^2)*R2+L2*Mw*R2+(L2.^2)*R3-(2*M.^2)*R3+L2*Mw*R3;
@@ -207,6 +196,7 @@ troughs = -troughs;
 [newVoltageShift1] = phaseShift(newVoltages, PhaseAngle1, loc_nada);
 [newVoltageShift2] = phaseShift(newVoltages, PhaseAngle2, loc_nada);
 [newVoltageShift3] = phaseShift(newVoltages, PhaseAngle3, loc_nada);
+injector1 = zeros(size(newVoltages));
 open("Vaccum_circuits_all_injectors.slx")
 shiftedSignal1.time = time;
 shiftedSignal1.signals.values = newVoltageShift1;
