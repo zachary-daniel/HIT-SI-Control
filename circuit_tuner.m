@@ -1,5 +1,33 @@
 clear; close all; clc;
 mdsconnect('landau.hit');
+mdsopen('hitsiu', 220810008) %get spa waveform
+spa_waveform_1  = double(mdsvalue('\hitscope_07:input_01'));
+spa_waveform_2  = double(mdsvalue('\hitscope_07:input_02'));
+spa_waveform_3  = double(mdsvalue('\hitscope_07:input_03'));
+spa_waveform_4  = double(mdsvalue('\hitscope_07:input_04'));
+t_spa = mdsvalue('dim_of(\hitscope_07:input_04)');
+t_spa = t_spa(125001:end, :);
+spa_waveform_1 = spa_waveform_1(125001:end, :);
+spa_waveform_2 = spa_waveform_2(125001:end, :);
+spa_waveform_3 = spa_waveform_3(125001:end, :);
+spa_waveform_4 = spa_waveform_4(125001:end, :);
+spa_waveform_1(:,2) = spa_waveform_1(:,1);
+spa_waveform_2(:,2) = spa_waveform_2(:,1);
+spa_waveform_3(:,2) = spa_waveform_3(:,1);
+spa_waveform_4(:,2) = spa_waveform_4(:,1);
+
+spa_waveform_1(:,1) = t_spa;
+spa_waveform_2(:,1) = t_spa;
+spa_waveform_3(:,1) = t_spa;
+spa_waveform_4(:,1) = t_spa;
+
+% for j = 2:length(t_spa)
+%     if t_spa(j) < t_spa(j-1)
+%         disp "No"
+%         return;
+%     end
+% end
+%%
 shot = 220802016;
 mdsopen('hitsiu', shot)
 Amplitude = 600;
@@ -9,8 +37,8 @@ SampleTime = 1e-7;
 %M = L2/5;
 %Mw = M/5;
 Cap = 96e-6; % F
-R1 = .0025; %Ohm
-R2 = .005; % Ohm
+R1 = .0005; %Ohm
+R2 = .0025; % Ohm
 R3 = .005;% Ohm
 % This is for a shot in which the second flux circuit is open and the first
 % flux circuit is run @ 600 V.
@@ -19,31 +47,42 @@ index2 = 17943;
 t = mdsvalue('dim_of(\v_div_1_fc)');
 v_fc_1 = mdsvalue('\v_div_1_fc');
 v_fc_2 = mdsvalue('\v_div_2_fc');
-v_l1 = mdsvalue('\v_div_1_fspa');
+v_l1 = mdsvalue('\hitscope_04:input_02');
+v_fspa = mdsvalue('\v_div_1_fspa');
 i_fc_1 = mdsvalue('\i_fcoil_1');
 i_fc_2 = mdsvalue('\i_fcoil_2');
-i_l1 = mdsvalue('\i_spa_f1');
+i_l1_f1 = mdsvalue('\i_spa_f1');
+i_l1_f2 = mdsvalue('\i_spa_f2');
 t_i = mdsvalue('dim_of(\i_spa_f1)');
 v_fc_4 = mdsvalue('\v_div_4_fc');
 i_fc_4 = mdsvalue('\i_fcoil_4');
 freq = double(mdsvalue("\sihi_freq"));
-%% Mutual Inductance here
-di1 = (i_fc_2(index2+1) - i_fc_2(index2))/( t_i(index2+1) - t_i(index2) );
-M = (v_fc_2(index) - i_fc_2(index2)*(-R2-R3))/di1; % This is the mutual inductance of this dumb fucking circuit
 
-Mw = (v_fc_4(index) - i_fc_4(index2)*(-R2-R3))/di1; %Weak coupling between circuits farthest apart
-
-%% Inductance of L1
-imp_l1 = mdsvalue('sihi_smooth(aimag(zratio(\v_div_1_fspa, \i_fcoil_1)))');% L1 inductance from this
-L1 = .04/(freq*2*pi);
-
-%% Inductance L2
 imp_l2 = mdsvalue('sihi_smooth(aimag(zratio(\v_div_1_fc, \i_fcoil_1)))');% L2 inductance from this
-L2 = .24287/(freq*2*pi);
+R_l2 = mdsvalue('sihi_smooth(real(zratio(\v_div_1_fc, \i_fcoil_1)))');
+L2 = .240/(freq*2*pi);
+
+
+imp_L1 = mdsvalue('sihi_smooth(aimag(zratio(\hitscope_04:input_02, \i_spa_f1)))');
+R_L1 = mdsvalue('sihi_smooth(real(zratio(\hitscope_04:input_02, \i_spa_f1)))');
+t_i_l1 = mdsvalue('dim_of(sihi_smooth(aimag(zratio(\hitscope_04:input_02, \i_spa_f1))))');
+L1 = .0947398/(2*pi*mdsvalue('\sihi_freq'));
+% L1 = 8.0141e-7;
+%Mutual Inductance here
+di1 = (i_fc_2(index2+1) - i_fc_2(index2))/( t_i(index2+1) - t_i(index2) ); 
+M = abs((-2*v_fc_2(index) - i_fc_2(index2)*(-R2-R3))/di1); % This is the mutual inductance of this dumb fucking circuit
+
+Mw = abs((-2*v_fc_4(index) - i_fc_4(index2)*(-R2-R3))/di1); %Weak coupling between circuits farthest apart
+
+ %Inductance of L1
+%imp_l1 = mdsvalue('sihi_smooth(aimag(zratio(\v_div_1_fspa, \i_fcoil_1)))');% L1 inductance from this... jk I was right and the spa voltage is not the L1 voltage hahahhahahahhah
+%L1 = .04/(freq*2*pi);
+
+
 
 %% Model Testing
 dT = 1e-7;
-NoisePower = .2;
+NoisePower = 0;
 PhaseAngle1 = 160;
 PhaseAngle2 = 90;
 PhaseAngle3 = 60;
@@ -218,23 +257,24 @@ troughs = -troughs;
 % figure(2)
 % plot(time, -abs(voltage))
 
-[newVoltages] = toSquare(voltage, nada, troughs, peaks, nada_times, trough_times, peak_times, Amplitude, SampleTime);
+newVoltages = v_fspa;
+%[newVoltages] = toSquare(voltage, nada, troughs, peaks, nada_times, trough_times, peak_times, Amplitude, SampleTime);
 [newVoltageShift1] = phaseShift(newVoltages, PhaseAngle1, loc_nada);
 [newVoltageShift2] = phaseShift(newVoltages, PhaseAngle2, loc_nada);
 [newVoltageShift3] = phaseShift(newVoltages, PhaseAngle3, loc_nada);
-injector1 = zeros(size(newVoltages));
+newVoltages = v_fspa;
 open("Circuit_tuner_model.slx")
-shiftedSignal1.time = time;
-shiftedSignal1.signals.values = newVoltageShift1;
-shiftedSignal2.time = time;
-shiftedSignal2.signals.values = newVoltageShift2;
-shiftedSignal3.time = time;
-shiftedSignal3.signals.values = newVoltageShift3;
-simin.time = time;
-simin.signals.values = newVoltages;
-sim("Vaccum_circuits_all_injectors.slx", "StopTime", "RunTime");
+shiftedSignal1.time = double(t);
+shiftedSignal1.signals.values = double(newVoltageShift1);
+shiftedSignal2.time = double(t);
+shiftedSignal2.signals.values = double(newVoltageShift2);
+shiftedSignal3.time = double(t);
+shiftedSignal3.signals.values = double(newVoltageShift3);
+simin.time = double(t);
+simin.signals.values = double(newVoltages);
+sim("Circuit_tuner_model.slx", "StopTime", "RunTime");
 figure()
-plot(time, newVoltages)
+plot(t, newVoltages)
 hold on
 plot(time, voltage, "r")
 xlabel("Time")
@@ -252,14 +292,14 @@ L1_Current_Approx_Flux_1 = ans.KalmanFilterOutputsFlux1.signals.values(:,1);
 
 L2_Current_Flux_2 = ans.L2CurrentFlux2.signals.values;
 C_Voltage_Flux_2 = ans.CVoltageFlux2.signals.values;
-L1_Current_Flux_2 = ans.L1CurrentFlux2.signals.values;
+%L1_Current_Flux_2 = ans.L1CurrentFlux2.signals.values;
 
 L2_Current_Approx_Flux_2 = ans.KalmanFilterOutputsFlux1.signals.values(:,6);
 C_Voltage_Approx_Flux_2 = ans.KalmanFilterOutputsFlux1.signals.values(:,5);
-L1_Current_Approx_Flux_2 = ans.KalmanFilterOutputsFlux1.signals.values(:,4);
+%L1_Current_Approx_Flux_2 = ans.KalmanFilterOutputsFlux1.signals.values(:,4);
 
-L1_Current_Approx_Flux_3 = ans.KalmanFilterOutputsFlux1.signals.values(:,7);
-L1_Current_Flux_3 = ans.L1CurrentFlux3.signals.values;
+%L1_Current_Approx_Flux_3 = ans.KalmanFilterOutputsFlux1.signals.values(:,7);
+%L1_Current_Flux_3 = ans.L1CurrentFlux3.signals.values;
 % Plot L2 vs. L2 Approx
 figure()
 plot(time, L2_Current_Flux_1, "LineWidth",2)
@@ -274,14 +314,14 @@ legend("True L2 Current with Noise", "Denoised L2 Current from KF", "Location", 
 
 
 % Plot C vs. C approx
-figure()
-plot(time, C_Voltage_Flux_1, "LineWidth", 5)
-hold on
-plot(time, C_Voltage_Approx_Flux_1, "Linewidth",.25)
-xlabel("Time")
-ylabel("Voltage")
-title("Noisey Output vs. Kalman Filter Output for C Voltage (Flux 1)")
-legend("True C Voltage with Noise", "Denoised C Voltage from KF", "Location", "northwest")
+% figure()
+% plot(time, C_Voltage_Flux_1, "LineWidth", 5)
+% hold on
+% plot(time, C_Voltage_Approx_Flux_1, "Linewidth",.25)
+% xlabel("Time")
+% ylabel("Voltage")
+% title("Noisey Output vs. Kalman Filter Output for C Voltage (Flux 1)")
+% legend("True C Voltage with Noise", "Denoised C Voltage from KF", "Location", "northwest")
 
 
 
@@ -306,24 +346,24 @@ title("Noisey Output vs. Kalman Filter Output for L2 Current (Flux 2)")
 legend("True L2 Current with Noise", "Denoised L2 Current from KF", "Location", "northwest")
 
 %C voltage Flux 2
-figure()
-plot(time, C_Voltage_Flux_2, "LineWidth", 5)
-hold on
-plot(time, C_Voltage_Approx_Flux_2, "Linewidth",.25)
-xlabel("Time")
-ylabel("Voltage")
-title("Noisey Output vs. Kalman Filter Output for C Voltage (Flux 2)")
-legend("True C Voltage with Noise", "Denoised C Voltage from KF", "Location", "northwest")
+% figure()
+% plot(time, C_Voltage_Flux_2, "LineWidth", 5)
+% hold on
+% plot(time, C_Voltage_Approx_Flux_2, "Linewidth",.25)
+% xlabel("Time")
+% ylabel("Voltage")
+% title("Noisey Output vs. Kalman Filter Output for C Voltage (Flux 2)")
+% legend("True C Voltage with Noise", "Denoised C Voltage from KF", "Location", "northwest")
 
 % L1 Current Flux 2
-figure()
-plot(time, L1_Current_Flux_2, "LineWidth", 2)
-hold on
-plot(time, L1_Current_Approx_Flux_2, "Linewidth", .25)
-xlabel("Time")
-ylabel("Current")
-title("Noisey Output vs. Kalman Filter Output for L1 Current (Flux 2)")
-legend("True L1 Current with Noise", "Denoised L1 Current from KF", "Location", "northwest")
+% figure()
+% plot(time, L1_Current_Flux_2, "LineWidth", 2)
+% hold on
+% plot(time, L1_Current_Approx_Flux_2, "Linewidth", .25)
+% xlabel("Time")
+% ylabel("Current")
+% title("Noisey Output vs. Kalman Filter Output for L1 Current (Flux 2)")
+% legend("True L1 Current with Noise", "Denoised L1 Current from KF", "Location", "northwest")
 
 
 % %%
@@ -416,7 +456,6 @@ function [newValues] = toSquare(values, nada, troughs, peaks, nada_times, trough
     %Make Square Waves here
     % Make new voltage 
     newValues = zeros(length(values),1);
-    Amplitude = 600;
     for i = 1:length(Areas)
         width = abs(Areas(i)/Amplitude);
         b1 = round((extrema_times(i)-width/2)/SampleTime);

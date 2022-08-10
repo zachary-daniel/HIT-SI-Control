@@ -1,0 +1,22 @@
+mdsconnect('landau.hit');   % connects to the dataserver, if on vpn and/or dns is not set up correctly, its 10.10.10.189 on the UW plasma network
+mdsopen('hitsiu',shot_number); % opens the shot_number discharge, shot numbers are YYMMDDSSS,  YY=year, MM=month, DD=day, SSS=shotnumber ex. 220721026
+				% 0 is last shot that was taken.   -1 is the 'model tree', empty shot with all the current input settings
+sig = mdsvalue('NODE'); % get the data for NODE.  Most nodes begin with a \. 
+time = mdsvalue('dim_of(NODE)');  % get the timebase for the node
+
+
+Circuit nodes:
+# is 1,2,3,4 on hitsiu.   # is a,b,c on hitsi3.    # is x,y on hitsi
+\v_div_#_fspa : voltage of flux spa # (L1)
+\v_div_#_fc : voltage of flux coil # (L2)
+\i_fcoil_# : current through flux coil # (L2)
+\i_spa_f# : current through flux spa # (L1)
+\sihi_freq : frequency the injectors are operating at
+
+some mdstcl functions:
+zrat(sig1,sig2) : computes hilbert(sig1) / hilbert(sig2), should give the complex impedance
+
+imp_L2 = mdsvalue('zrat(\v_div_1_fc,\i_1_fcoil)'); % this should give the complex impedance of L2
+
+
+sihi_smooth : boxcar averages signal at injector frequency
