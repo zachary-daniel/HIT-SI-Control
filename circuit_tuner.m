@@ -37,7 +37,7 @@ SampleTime = 1e-7;
 %M = L2/5;
 %Mw = M/5;
 Cap = 96e-6; % F
-R1 = .0005; %Ohm
+R1 = .005; %Ohm
 R2 = .0025; % Ohm
 R3 = .005;% Ohm
 % This is for a shot in which the second flux circuit is open and the first
@@ -66,13 +66,13 @@ L2 = .240/(freq*2*pi);
 imp_L1 = mdsvalue('sihi_smooth(aimag(zratio(\hitscope_04:input_02, \i_spa_f1)))');
 R_L1 = mdsvalue('sihi_smooth(real(zratio(\hitscope_04:input_02, \i_spa_f1)))');
 t_i_l1 = mdsvalue('dim_of(sihi_smooth(aimag(zratio(\hitscope_04:input_02, \i_spa_f1))))');
-L1 = .0947398/(2*pi*mdsvalue('\sihi_freq'));
-% L1 = 8.0141e-7;
+ %.0947398/(2*pi*mdsvalue('\sihi_freq'));
+L1 = 8.0141e-7;
 %Mutual Inductance here
 di1 = (i_fc_2(index2+1) - i_fc_2(index2))/( t_i(index2+1) - t_i(index2) ); 
-M = abs((-2*v_fc_2(index) - i_fc_2(index2)*(-R2-R3))/di1); % This is the mutual inductance of this dumb fucking circuit
+M = abs((-v_fc_2(index) - i_fc_2(index2)*(-R2-R3))/di1); % This is the mutual inductance of this dumb fucking circuit
 
-Mw = abs((-2*v_fc_4(index) - i_fc_4(index2)*(-R2-R3))/di1); %Weak coupling between circuits farthest apart
+Mw = abs((-v_fc_4(index) - i_fc_4(index2)*(-R2-R3))/di1); %Weak coupling between circuits farthest apart
 
  %Inductance of L1
 %imp_l1 = mdsvalue('sihi_smooth(aimag(zratio(\v_div_1_fspa, \i_fcoil_1)))');% L1 inductance from this... jk I was right and the spa voltage is not the L1 voltage hahahhahahahhah

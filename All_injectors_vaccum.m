@@ -4,23 +4,22 @@ clear;close all; clc;
 mdsopen('hitsiu', 220802016);
 Amplitude = 600;
 Amplitude1 = 600;
-Frequency = double(mdsvalue('\sihi_freq'));
+Frequency = 19100;%double(mdsvalue('\sihi_freq'));
 RunTime = .004;
-SampleTime = 1e-7;
-Lp = 1.85e-6; 
-L1 = (1.4e-6); %H
+SampleTime = 1e-7; 
+L1 = (8.0141e-7); %H
 L2 = 2.0462e-6; %H
-M = .5*2.8343e-7;
-Mw = .5*2.5209e-7;
+M = 3.2951e-7;
+Mw = 2.7548e-7;
 Cap = 96e-6; % F
 R1 = .0025; %Ohm
 R2 = .005; % Ohm
 R3 = .005;% Ohm
 dT = 1e-7;
-NoisePower = .2;
-PhaseAngle1 = 160;
-PhaseAngle2 = 90;
-PhaseAngle3 = 60;
+NoisePower = .05;
+PhaseAngle1 = 0;
+PhaseAngle2 = 0;
+PhaseAngle3 = 0;
 
 scalar1 = 1/(L2-Mw)*(L2.^2-4*M.^2+2*L2*Mw+Mw.^2); %Scale factor in front of the entries to the A matrix that are affected by mutual inductance
 
@@ -149,8 +148,8 @@ Dd = sys_d.D;
 G = eye(3);
 H = zeros(3,3);
 
-Q = diag(.01*ones(1,size(A, 1))); % disturbance covariance
-R = diag(.1*ones(1,size(B,2))); % Noise covariance
+Q = diag(.001*ones(1,size(A, 1))); % disturbance covariance
+R = diag(.001*ones(1,size(B,2))); % Noise covariance
 time = (0:SampleTime:RunTime);
 backwards_vals = (Amplitude*sin(time*Frequency*2*pi));
 
