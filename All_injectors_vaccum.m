@@ -21,7 +21,7 @@ PhaseAngle1 = 0;
 PhaseAngle2 = 0;
 PhaseAngle3 = 0;
 
-scalar1 = 1/(L2-Mw)*(L2.^2-4*M.^2+2*L2*Mw+Mw.^2); %Scale factor in front of the entries to the A matrix that are affected by mutual inductance
+scalar1 = 1/((L2-Mw)*(L2.^2-4*M.^2+2*L2*Mw+Mw.^2)); %Scale factor in front of the entries to the A matrix that are affected by mutual inductance
 
 x3a =  (-L2.^2)*R2+(2*M.^2)*R2-L2*Mw*R2;
 x3b = (-L2.^2)+2*M.^2-L2*Mw;
@@ -129,7 +129,7 @@ D = zeros( size(C,1), size(B,2) );
 states = {'x1', 'x2', 'x3', 'x1b', 'x2b', 'x3b', 'x1c', 'x2c', 'x3c', 'x1d', 'x2d', 'x3d'};
 inputs = {'v(t)'}; 
 outputs = {'x3'};
-
+%%
 %continuous time system
 sysc = ss(A,B,C,D, "statename", states,"inputname", inputs, "outputname", outputs);
 A = sysc.A;
@@ -149,7 +149,7 @@ G = eye(3);
 H = zeros(3,3);
 
 Q = diag(.001*ones(1,size(A, 1))); % disturbance covariance
-R = diag(.001*ones(1,size(B,2))); % Noise covariance
+R = diag(.01*ones(1,size(B,2))); % Noise covariance
 time = (0:SampleTime:RunTime);
 backwards_vals = (Amplitude*sin(time*Frequency*2*pi));
 
