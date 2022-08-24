@@ -1,7 +1,9 @@
 clear;close all; clc;
 % Initialize data and plot to make sure everything is gucci
 % declare time and voltage for our data
+load("All_injectors_vaccum")
 mdsopen('hitsiu', 220802016);
+penalty = .01;
 Amplitude = 600;
 Amplitude1 = 600;
 Frequency = 19100;%double(mdsvalue('\sihi_freq'));
@@ -158,14 +160,14 @@ scaling_amplitude = 1; %(sin(time*2*pi*Frequency/20)); This is a test that the m
 
 
 %%
-backwards_circuit_simin.time = (time)';
-time = 0:SampleTime:RunTime;
-backwards_circuit_simin.signals.values = (scaling_amplitude.*backwards_vals)';
-sim("RLC_Sin_To_Square_Backwards.slx", "StopTime", "RunTime")
-% sim("RLC_Sin_To_Square_Backwards.slx")
-time = ans.tout;
-voltage = ans.simout.signals.values;
 
+% backwards_circuit_simin.time = (time)';
+% time = 0:SampleTime:RunTime;
+% backwards_circuit_simin.signals.values = (scaling_amplitude.*backwards_vals)';
+% sim("RLC_Sin_To_Square_Backwards.slx", "StopTime", "RunTime")
+% % sim("RLC_Sin_To_Square_Backwards.slx")
+% time = ans.tout;
+% voltage = ans.simout.signals.values;
 
 %Locate peaks, troughs, and nada, and change the location data into time
 %data
@@ -200,145 +202,28 @@ troughs = -troughs;
 injector1 = zeros(size(newVoltages));
 %Kalman filter bitch
 [kalmf, L, P] = kalman(sys_d, Q, R, 0);
-
+J = @(ref_signal, output, current_switch, next_switch) ((ref_signal-output).^2) + penalty* abs(current_switch-next_switch);
 syskf = ss(Ad-L*Cd, [Bd L],eye(12), 0*[Bd L], dT);
 [y,t] = lsim(sys_d, [voltage voltage voltage voltage], time);
 [yk, tk] = lsim(syskf, [voltage voltage voltage voltage, y], time);
 
 
-%%
 
-open("Vaccum_circuits_all_injectors.slx")
-shiftedSignal1.time = time;
-shiftedSignal1.signals.values = newVoltageShift1;
-shiftedSignal2.time = time;
-shiftedSignal2.signals.values = newVoltageShift2;
-shiftedSignal3.time = time;
-shiftedSignal3.signals.values = newVoltageShift3;
-simin.time = time;
-simin.signals.values = newVoltages;
-sim("Vaccum_circuits_all_injectors.slx", "StopTime", "RunTime");
-figure()
-plot(time, newVoltages)
-hold on
-plot(time, voltage, "r")
-xlabel("Time")
-ylabel("Input Voltage")
-title("Conversion of Sin wave to Square Wave for H-Bridge")
-legend("Input to H-Bridge", "Output of Reverse Circuit")
+%% MPC Loop
+clc;
+ref_signal = voltage; %reference signal to track
+horizon = 128*dT; %size of step horizon in terms of time samples
+step_size = horizon/dT; %size of one horizon in terms of indices 
+total_steps = RunTime/dT;  % number of time samples
+switch_position = 0;
+current_states = diag(zeros(size(A,1)));
+for i = step_size:step_size:total_steps-step_size
+    current_time = (i-step_size)*dT;
+    [next_input, switch_position, results] = MPC(current_states, voltage(round(i)), sys_d, switch_position, dT, horizon,current_time, Amplitude, J);
+    current_states = lsim(syskf, [next_input, next_input, next_input, next_input, results],current_time:dT:(i)*dT, current_states);
+    current_states = current_states(end,:);
+end
 
-% Grab Klaman Filter outputs and get corresponding values
-L2_Current_Flux_1 = ans.L2CurrentFlux1.signals.values;
-C_Voltage_Flux_1 = ans.CVoltageFlux1.signals.values;
-L1_Current_Flux_1 = ans.L1CurrentFlux1.signals.values;
-L2_Current_Approx_Flux_1= ans.KalmanFilterOutputsFlux1.signals.values(:,3);
-C_Voltage_Approx_Flux_1 = ans.KalmanFilterOutputsFlux1.signals.values(:,2);
-L1_Current_Approx_Flux_1 = ans.KalmanFilterOutputsFlux1.signals.values(:,1);
-
-L2_Current_Flux_2 = ans.L2CurrentFlux2.signals.values;
-C_Voltage_Flux_2 = ans.CVoltageFlux2.signals.values;
-L1_Current_Flux_2 = ans.L1CurrentFlux2.signals.values;
-
-L2_Current_Approx_Flux_2 = ans.KalmanFilterOutputsFlux1.signals.values(:,6);
-C_Voltage_Approx_Flux_2 = ans.KalmanFilterOutputsFlux1.signals.values(:,5);
-L1_Current_Approx_Flux_2 = ans.KalmanFilterOutputsFlux1.signals.values(:,4);
-
-L1_Current_Approx_Flux_3 = ans.KalmanFilterOutputsFlux1.signals.values(:,7);
-L1_Current_Flux_3 = ans.L1CurrentFlux3.signals.values;
-% Plot L2 vs. L2 Approx
-figure()
-plot(time, L2_Current_Flux_1, "LineWidth",2)
-hold on
-plot(time, L2_Current_Approx_Flux_1, "Linewidth", .25)
-xlabel("Time")
-ylabel("Current")
-title("Noisey Output vs. Kalman Filter Output for L2 Current (Flux 1)")
-legend("True L2 Current with Noise", "Denoised L2 Current from KF", "Location", "northwest")
-
-
-
-
-% Plot C vs. C approx
-figure()
-plot(time, C_Voltage_Flux_1, "LineWidth", 5)
-hold on
-plot(time, C_Voltage_Approx_Flux_1, "Linewidth",.25)
-xlabel("Time")
-ylabel("Voltage")
-title("Noisey Output vs. Kalman Filter Output for C Voltage (Flux 1)")
-legend("True C Voltage with Noise", "Denoised C Voltage from KF", "Location", "northwest")
-
-
-
-% Plot L1 Current vs. L1 Approx
-figure()
-plot(time, L1_Current_Flux_1, "LineWidth", 2)
-hold on
-plot(time, L1_Current_Approx_Flux_1, "Linewidth", .25)
-xlabel("Time")
-ylabel("Current")
-title("Noisey Output vs. Kalman Filter Output for L1 Current (Flux 1)")
-legend("True L1 Current with Noise", "Denoised L1 Current from KF", "Location", "northwest")
-
-% L2 Current Flux 2
-figure()
-plot(time, L2_Current_Flux_2, "LineWidth",2)
-hold on
-plot(time, L2_Current_Approx_Flux_2, "Linewidth", .25)
-xlabel("Time")
-ylabel("Current")
-title("Noisey Output vs. Kalman Filter Output for L2 Current (Flux 2)")
-legend("True L2 Current with Noise", "Denoised L2 Current from KF", "Location", "northwest")
-
-%C voltage Flux 2
-figure()
-plot(time, C_Voltage_Flux_2, "LineWidth", 5)
-hold on
-plot(time, C_Voltage_Approx_Flux_2, "Linewidth",.25)
-xlabel("Time")
-ylabel("Voltage")
-title("Noisey Output vs. Kalman Filter Output for C Voltage (Flux 2)")
-legend("True C Voltage with Noise", "Denoised C Voltage from KF", "Location", "northwest")
-
-% L1 Current Flux 2
-figure()
-plot(time, L1_Current_Flux_2, "LineWidth", 2)
-hold on
-plot(time, L1_Current_Approx_Flux_2, "Linewidth", .25)
-xlabel("Time")
-ylabel("Current")
-title("Noisey Output vs. Kalman Filter Output for L1 Current (Flux 2)")
-legend("True L1 Current with Noise", "Denoised L1 Current from KF", "Location", "northwest")
-
-
-% %%
-% close all;
-% figure()
-% % plot(time, L2_Current)
-% % hold on
-% % plot(time, L1_Current)
-% figure()
-% sysFullOutput = ss(A,B,eye(3), D);
-% [y,t] = lsim(sysFullOutput, newVoltages, time);
-% plot(time, y(:,1));
-% legend("calculated", "measured")
-% hold on
-% plot(time, L1_Current);
-% title("L1")
-% figure()
-% plot(time, y(:,2))
-% hold on
-% plot(time, C_Voltage)
-% title("C")
-% legend("calculated", "measured")
-% figure()
-% plot(time, y(:,3))
-% hold on
-% plot(time, L2_Current)
-% title("L2")
-% legend("calculated", "measured")
-% % legend("Lsim L1", "Lsim C", "Lsim L2", "Sim L1", "Sim C", "Sim L2");
-% %Functions below this line
 
 function [ts] = locsToTimes(locs, time)
     for i = 1:length(locs)
@@ -413,4 +298,5 @@ function [newValues] = toSquare(values, nada, troughs, peaks, nada_times, trough
         end
     end
 end
+
 
