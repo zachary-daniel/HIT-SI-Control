@@ -2,7 +2,7 @@ clear;close all; clc;
 % Initialize data and plot to make sure everything is gucci
 % declare time and voltage for our data
 load("All_injectors_vaccum")
-mdsopen('hitsiu', 220802016);
+% mdsopen('hitsiu', 220802016);
 penalty = .01;
 Amplitude = 600;
 Amplitude1 = 600;
@@ -217,11 +217,19 @@ step_size = horizon/dT; %size of one horizon in terms of indices
 total_steps = RunTime/dT;  % number of time samples
 switch_position = 0;
 current_states = diag(zeros(size(A,1)));
+allInputs = zeros(size(t));
+num_iters = 0;
 for i = step_size:step_size:total_steps-step_size
-    current_time = (i-step_size)*dT;
-    [next_input, switch_position, results] = MPC(current_states, voltage(round(i)), sys_d, switch_position, dT, horizon,current_time, Amplitude, J);
-    current_states = lsim(syskf, [next_input, next_input, next_input, next_input, results],current_time:dT:(i)*dT, current_states);
-    current_states = current_states(end,:);
+    current_time = (i-step_size)*dT; %get starting time for upcmoming lsim command 
+    [next_input, switch_position, results] = MPC(current_states, 33*voltage(round(i)), sys_d, switch_position, dT, horizon,current_time, Amplitude, J); % call MPC function and pass the initial conditions, 
+    % the reference point at the next time step, state space model in
+    % discrete time, current switch position, sample rate in seconds, the
+    % horizon (how far out you are trying to predict), the current time,
+    % amplitude of SPA, and the cost function
+    current_states = lsim(syskf, [next_input, next_input, next_input, next_input, results],current_time:dT:(i)*dT, current_states); % update value of current states for next iteration
+    current_states = current_states(end,:); %update current states
+    allInputs(1+(length(next_input)*num_iters):length(next_input)*(num_iters+1),1) = next_input; % collect all inputs
+    num_iters = num_iters+1;
 end
 
 
