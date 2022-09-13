@@ -1,9 +1,9 @@
 clear;close all; clc;
 % Initialize data and plot to make sure everything is gucci
 % declare time and voltage for our data
-load("All_injectors_vaccum")
+load("All_injectors_vaccum_full_workspace.mat")
 % mdsopen('hitsiu', 220802016);
-penalty = .01;
+penalty = 0;
 Amplitude = 600;
 Amplitude1 = 600;
 Frequency = 19100;%double(mdsvalue('\sihi_freq'));
@@ -212,21 +212,21 @@ syskf = ss(Ad-L*Cd, [Bd L],eye(12), 0*[Bd L], dT);
 %% MPC Loop
 clc;
 ref_signal = voltage; %reference signal to track
-horizon = 128*dT; %size of step horizon in terms of time samples
+horizon = 32*dT; %size of step horizon in terms of time samples
 step_size = horizon/dT; %size of one horizon in terms of indices 
 total_steps = RunTime/dT;  % number of time samples
 switch_position = 0;
 current_states = diag(zeros(size(A,1)));
 allInputs = zeros(size(t));
 num_iters = 0;
-for i = step_size:step_size:total_steps-step_size
+for i = step_size:step_size:(total_steps-step_size)
     current_time = (i-step_size)*dT; %get starting time for upcmoming lsim command 
-    [next_input, switch_position, results] = MPC(current_states, 33*voltage(round(i)), sys_d, switch_position, dT, horizon,current_time, Amplitude, J); % call MPC function and pass the initial conditions, 
+    [next_input, switch_position, results] = MPC(current_states, L2_Current_Flux_1(i), sys_d, switch_position, dT, horizon,current_time, Amplitude, J, RunTime); % call MPC function and pass the initial conditions, 
     % the reference point at the next time step, state space model in
     % discrete time, current switch position, sample rate in seconds, the
     % horizon (how far out you are trying to predict), the current time,
     % amplitude of SPA, and the cost function
-    current_states = lsim(syskf, [next_input, next_input, next_input, next_input, results],current_time:dT:(i)*dT, current_states); % update value of current states for next iteration
+    current_states = lsim(syskf, [next_input, next_input, next_input, next_input, results],current_time:dT:(i)*dT-dT, current_states); % update value of current states for next iteration
     current_states = current_states(end,:); %update current states
     allInputs(1+(length(next_input)*num_iters):length(next_input)*(num_iters+1),1) = next_input; % collect all inputs
     num_iters = num_iters+1;

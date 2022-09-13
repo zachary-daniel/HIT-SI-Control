@@ -13,7 +13,7 @@ R1 = .0025; %Ohm
 R2 = .005; % Ohm
 R3 = .005;% Ohm
 dT = 1e-7;
-NoisePower = .2;
+NoisePower = 0;
 A = [((-1/L1)*(R1+R2)), -1/L1, R2*1/L1;
      1/Cap, 0, -1/Cap;
      (1/L2)*R2, 1/L2, (-1/L2)*(R3+R2)];

@@ -16,10 +16,10 @@ R1 = .0025; %Ohm
 R2 = .005; % Ohm
 R3 = .005;% Ohm
 dT = 1e-7;
-NoisePower = .05;
-PhaseAngle1 = 0;
-PhaseAngle2 = 0;
-PhaseAngle3 = 0;
+NoisePower = .1;
+PhaseAngle1 = 45;
+PhaseAngle2 = 90;
+PhaseAngle3 = 135;
 
 scalar1 = 1/((L2-Mw)*(L2.^2-4*M.^2+2*L2*Mw+Mw.^2)); %Scale factor in front of the entries to the A matrix that are affected by mutual inductance
 
@@ -149,7 +149,7 @@ G = eye(3);
 H = zeros(3,3);
 
 Q = .001; %diag(.001*ones(1,size(A, 1))); % disturbance covariance
-R = diag(.1*ones(1,size(B,2))); % Noise covariance
+R = diag(10*ones(1,size(B,2))); % Noise covariance
 time = (0:SampleTime:RunTime);
 backwards_vals = (Amplitude*sin(time*Frequency*2*pi));
 
@@ -260,13 +260,15 @@ legend("True L2 Current with Noise", "Denoised L2 Current from KF", "Location", 
 
 % Plot C vs. C approx
 figure()
-plot(time, C_Voltage_Flux_1, "LineWidth", 5)
+plot(time, C_Voltage_Flux_1,  "LineWidth", .5)
 hold on
-plot(time, C_Voltage_Approx_Flux_1, "Linewidth",.25)
+plot(time, C_Voltage_Approx_Flux_1,'r--', "Linewidth",2)
+C_Voltage_No_Noise = ans.TrueCVoltage.signals.values; % Cap voltage with no noise
+plot(time, C_Voltage_No_Noise, 'g:', 'Linewidth', 2)
 xlabel("Time")
 ylabel("Voltage")
 title("Noisey Output vs. Kalman Filter Output for C Voltage (Flux 1)")
-legend("True C Voltage with Noise", "Denoised C Voltage from KF", "Location", "northwest")
+legend("Cap Voltage with Noise", "Denoised Cap Voltage from KF", 'Cap Voltage no Noise', "Location", "northwest")
 
 
 
@@ -309,6 +311,8 @@ xlabel("Time")
 ylabel("Current")
 title("Noisey Output vs. Kalman Filter Output for L1 Current (Flux 2)")
 legend("True L1 Current with Noise", "Denoised L1 Current from KF", "Location", "northwest")
+
+
 
 
 % %%
