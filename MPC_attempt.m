@@ -212,17 +212,24 @@ syskf = ss(Ad-L*Cd, [Bd L],eye(12), 0*[Bd L], dT);
 %% MPC Loop
 clc;
 ref_signal = voltage; %reference signal to track
-horizon = 32*dT; %size of step horizon in terms of time samples
+horizon = 29*dT; %size of step horizon in terms of time samples. 29 seems to be the magic number? Not really sure why...
 step_size = horizon/dT; %size of one horizon in terms of indices 
 total_steps = RunTime/dT;  % number of time samples
 switch_position = 0;
 current_states = diag(zeros(size(A,1)));
 allInputs = zeros(size(t));
 num_iters = 0;
-for i = step_size:step_size:(total_steps-step_size)
+reference = 9000*sin(2*pi*Frequency);
+%The change I want to make is for the MPC to look forward in the reference
+%signal farther than the update time. As in, if the rate at which I perform
+%a control input is every 24dt's I want the MPC to look at the reference
+%signal 36dt's in the future instead of 24dt's. Turns out that shit don't
+%work :)))))
+for i = round(step_size:step_size:(total_steps-step_size)) % I is always one horizon ahead of where the simulation is
     current_time = (i-step_size)*dT; %get starting time for upcmoming lsim command 
-    [next_input, switch_position, results] = MPC(current_states, L2_Current_Flux_1(i), sys_d, switch_position, dT, horizon,current_time, Amplitude, J, RunTime); % call MPC function and pass the initial conditions, 
-    % the reference point at the next time step, state space model in
+    [next_input, switch_position, results] = MPC(current_states, reference(i), sys_d, switch_position, dT, horizon,current_time, Amplitude, J, RunTime);
+
+        % the reference point at the next time step, state space model in
     % discrete time, current switch position, sample rate in seconds, the
     % horizon (how far out you are trying to predict), the current time,
     % amplitude of SPA, and the cost function
@@ -231,8 +238,15 @@ for i = step_size:step_size:(total_steps-step_size)
     allInputs(1+(length(next_input)*num_iters):length(next_input)*(num_iters+1),1) = next_input; % collect all inputs
     num_iters = num_iters+1;
 end
-
-
+ouch = lsim(sys_d, [allInputs allInputs allInputs allInputs], time);
+plot(ouch(:,1))
+hold on
+plot(L2_Current_Flux_1)
+title("Output from Simulation using MPC vs. Reference Signal");
+xlabel('Time (s)');
+ylabel('Current (Amps)')
+legend('Output from Simulation', 'Reference Signal');
+ylim([-1.5e4, 1.5e4]);
 function [ts] = locsToTimes(locs, time)
     for i = 1:length(locs)
         t = locs(i);

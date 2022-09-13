@@ -13,19 +13,17 @@ function [nextInput, new_switch_position, results] = MPC(currentStates, referenc
     end
     y = zeros(length(t_window(1,:)), 12);
     for i = 1:length(permissible_states)
-        input = ones(size(t_window,2)) * (permissible_states(i)*(Amplitude));
-        input = diag(input);
+        input = ones(size(t_window,2),1) * (permissible_states(i)*(Amplitude));
         divider = length(input);
         input(1:round(divider/8)-1) = 0;
-        input(divider-round(divider/8)+1:divider) = 0;
+        input(divider-round(divider/8)+2:divider) = 0;
         y(:, ((4*i)-3) :4*i) = lsim(sys_d, [input input input input], t_window, currentStates);
         output = y(end, (i.^2)+1);
         cost(i) = J(referencePoint,output, switch_position, permissible_states(i));
     end
     [M,I] = min(cost);
     results = y(:, ((4*I)-3): 4*I);
-    [nextInput] = ones(size(t_window,2)) * permissible_states(I)*Amplitude; 
-    nextInput = diag(nextInput);
+    [nextInput] = ones(size(t_window,2),1) * permissible_states(I)*Amplitude; 
     divider = length(nextInput);
      nextInput(1:round(divider/8)-1) = 0;
      nextInput(divider-round(divider/8)+1:divider) = 0;

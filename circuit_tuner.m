@@ -37,9 +37,9 @@ SampleTime = 1e-7;
 %M = L2/5;
 %Mw = M/5;
 Cap = 96e-6; % F
-R1 = .005; %Ohm
-R2 = .0025; % Ohm
-R3 = .005;% Ohm
+R1 = .006; %Ohm
+R2 = .003; % Ohm
+R3 = .006;% Ohm
 % This is for a shot in which the second flux circuit is open and the first
 % flux circuit is run @ 600 V.
 index = 9946;
