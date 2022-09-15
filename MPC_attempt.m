@@ -219,7 +219,7 @@ switch_position = 0;
 current_states = diag(zeros(size(A,1)));
 allInputs = zeros(size(t));
 num_iters = 0;
-reference = 9000*sin(2*pi*Frequency);
+reference = L2_Current_Flux_1;
 %The change I want to make is for the MPC to look forward in the reference
 %signal farther than the update time. As in, if the rate at which I perform
 %a control input is every 24dt's I want the MPC to look at the reference

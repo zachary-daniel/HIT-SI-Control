@@ -17,14 +17,14 @@ R2 = .005; % Ohm
 R3 = .005;% Ohm
 dT = 1e-7;
 NoisePower = 0;
-PhaseAngle1 = 45;
-PhaseAngle2 = 90;
-PhaseAngle3 = 135;
+PhaseAngle1 = 0;
+PhaseAngle2 = 0;
+PhaseAngle3 = 0;
 
-scalar1 = 1/((L2-Mw)*(L2.^2-4*M.^2+2*L2*Mw+Mw.^2)); %Scale factor in front of the entries to the A matrix that are affected by mutual inductance
+scalar1 = 1/((L2-Mw)*( (L2.^2) - (4*M.^2) + 2*L2*Mw+ (Mw.^2) )); %Scale factor in front of the entries to the A matrix that are affected by mutual inductance
 
 x3a =  (-L2.^2)*R2+(2*M.^2)*R2-L2*Mw*R2;
-x3b = (-L2.^2)+2*M.^2-L2*Mw;
+x3b = (-L2.^2)+(2*M.^2)-L2*Mw;
 x3c = (L2.^2)*R2-(2*M.^2)*R2+L2*Mw*R2+(L2.^2)*R3-(2*M.^2)*R3+L2*Mw*R3;
 x3d = L2*M*R2 - M*Mw*R2;
 x3e = L2*M-M*Mw;
@@ -33,8 +33,8 @@ x3g = L2*M*R2-M*Mw*R2;
 x3h = L2*M-M*Mw;
 x3i = -L2*M*R2+M*Mw*R2-L2*M*R3+M*Mw*R3;
 x3j = -2*(M.^2)*R2+L2*Mw*R2+(Mw.^2)*R2;
-x3k = (-2*(M.^2)+L2*Mw+Mw.^2);
-x3l = 2*(M.^2)*R2-L2*Mw*R2-(Mw.^2)*R2+2*R3*M.^2-L2*Mw*R3-R3*Mw.^2;
+x3k = -2*(M.^2)+L2*Mw+Mw.^2;
+x3l = 2*(M.^2)*R2-L2*Mw*R2-(Mw.^2)*R2+2*R3*(M.^2)-L2*Mw*R3-R3*Mw.^2;
 
 %Entries for x6 in A matrix
 x6a = -L2*M*R2+M*Mw*R2;
@@ -245,6 +245,13 @@ L1_Current_Approx_Flux_2 = ans.KalmanFilterOutputsFlux1.signals.values(:,4);
 
 L1_Current_Approx_Flux_3 = ans.KalmanFilterOutputsFlux1.signals.values(:,7);
 L1_Current_Flux_3 = ans.L1CurrentFlux3.signals.values;
+C_Voltage_Flux_3 = ans.CVoltageFlux3.signals.values;
+L2_Current_Flux_3 = ans.L2CurrentFlux3.signals.values;
+
+L1_Current_Flux_4 = ans.L1CurrentFlux4.signals.values;
+C_Voltage_Flux_4 = ans.CVoltageFlux4.signals.values;
+L2_Current_Flux_4 = ans.L2CurrentFlux4.signals.values;
+
 % Plot L2 vs. L2 Approx
 figure()
 plot(time, L2_Current_Flux_1, "LineWidth",2)
