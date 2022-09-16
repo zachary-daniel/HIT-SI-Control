@@ -10,6 +10,7 @@ time = 0:dT:.004;
 B = sysc.B;
 Q = .001; %diag(.001*ones(1,size(A, 1))); % disturbance covariance
 R = diag(10*ones(1,size(B,2))); % Noise covariance
+noisePower = 1000;
 
 %% Stuff for single injector model
 % Ad = sys_d.A;
@@ -112,7 +113,7 @@ R = diag(10*ones(1,size(B,2))); % Noise covariance
 
 %% Let's try doing this on a small sample of the shot data to do a quick time prediction opposed to trying to capture all of the dynamics
 start = 1;
-stop = 3500; % As long as the stop sample is after the circuit goes to steady state this thing works like a charm
+stop = length(time); % As long as the stop sample is after the circuit goes to steady state this thing works like a charm
 
 [kalmf, L, P] = kalman(sys_d, Q, R, 0);
 
@@ -140,10 +141,27 @@ syskf = ss(Ad-L*Cd, [Bd L],eye(12), 0*[Bd L], dT);
 % C_Voltage_Flux_4 = yk(:,11);
 % L2_Current_Flux_4 = yk(:,12);
 
+L1_Current_Flux_1 = L1_Current_Flux_1 + noisePower*randn(size(L1_Current_Flux_1));
+C_Voltage_Flux_1 = C_Voltage_Flux_1 + noisePower*randn(size(C_Voltage_Flux_1));
+L2_Current_Flux_1 = L2_Current_Flux_1 + noisePower*randn(size(L2_Current_Flux_1));
+L1_Current_Flux_2 = L1_Current_Flux_2 + noisePower*randn(size( L1_Current_Flux_2));
+C_Voltage_Flux_2 = C_Voltage_Flux_2 + noisePower*randn(size( C_Voltage_Flux_2));
+L2_Current_Flux_2 = L2_Current_Flux_2 + noisePower*randn(size(L2_Current_Flux_2));
+L1_Current_Flux_3 = L1_Current_Flux_3 + noisePower*randn(size(L1_Current_Flux_3));
+C_Voltage_Flux_3 = C_Voltage_Flux_3 + noisePower*randn(size(C_Voltage_Flux_3));
+L2_Current_Flux_3 = L2_Current_Flux_3 + noisePower*randn(size(L2_Current_Flux_3));
+L1_Current_Flux_4 = L1_Current_Flux_4 + noisePower*randn(size(L1_Current_Flux_4));
+C_Voltage_Flux_4 = C_Voltage_Flux_4 + noisePower*randn(size(C_Voltage_Flux_4));
+L2_Current_Flux_4 = L2_Current_Flux_4 + noisePower*randn(size(L2_Current_Flux_4));
+
+
 
 X = [L1_Current_Flux_1(start:stop-1,1)'; C_Voltage_Flux_1(start:stop-1,1)'; L2_Current_Flux_1(start:stop-1,1)'; L1_Current_Flux_2(start:stop-1,1)';
     C_Voltage_Flux_2(start:stop-1,1)'; L2_Current_Flux_2(start:stop-1,1)'; L1_Current_Flux_3(start:stop-1,1)'; C_Voltage_Flux_3(start:stop-1,1)';
    L2_Current_Flux_3(start:stop-1,1)'; L1_Current_Flux_4(start:stop-1,1)'; C_Voltage_Flux_4(start:stop-1,1)'; L2_Current_Flux_4(start:stop-1,1)'];
+
+X = X + noisePower*randn(size(X));
+
 % data stacked from the second position to the end
 X2 = [L1_Current_Flux_1(start+1:stop,1)'; C_Voltage_Flux_1(start+1:stop,1)'; L2_Current_Flux_1(start+1:stop,1)'; L1_Current_Flux_2(start+1:stop,1)'; 
     C_Voltage_Flux_2(start+1:stop,1)'; L2_Current_Flux_2(start+1:stop,1)'; L1_Current_Flux_3(start+1:stop,1)'; C_Voltage_Flux_3(start+1:stop,1)';
@@ -152,38 +170,61 @@ X2 = [L1_Current_Flux_1(start+1:stop,1)'; C_Voltage_Flux_1(start+1:stop,1)'; L2_
 
 Upsilon = [newVoltages(start:stop-1,1)'; newVoltageShift1(start:stop-1,1)'; newVoltageShift2(start:stop-1,1)'; newVoltageShift3(start:stop-1,1)';];
 
-Omega = [X; Upsilon];
+Omega_f = [X; Upsilon];
 
-[Utilde, Stilde, Vtilde] = svd(Omega, 'econ');
+[Utilde_f, Stilde_f, Vtilde_f] = svd(Omega_f, 'econ');
 
-[Uhat, Shat, Vhat] = svd(X2, 'econ');
+[Uhat_f, Shat_f, Vhat_f] = svd(X2, 'econ');
 
-U1tilde = Utilde(1:12,:);
 
-U2tilde = Utilde(13:16, :);
-%Abar and Bbar are the reconstructed matrices without a truncation in the
-%SVD
-Abar = X2*Vtilde*pinv(Stilde)*U1tilde';
-
-Bbar = X2*Vtilde*pinv(Stilde)*U2tilde';
-
-sys_dmd = ss(Abar, Bbar, Cd, Dd, dT);
 
 % Now let's try with truncation
 
-trunc1 =4; %size(Stilde,1);
+trunc1 = 4; %size(Stilde,1);
 
 trunc2 = 7;
 
 % To truncate in SVD we take the first r cols of U, an rxr square of S, and
 % the first r cols of V
-Utilde_t = Utilde(:,1:trunc1);
-Stilde_t = Stilde(1:trunc1, 1:trunc1);
-Vtilde_t = Vtilde(:,1:trunc1); 
-U1tilde_t = Utilde_t(1:12,:);
-U2tilde_t = Utilde_t(13:16,:);
+Utilde_t_f = Utilde_f(:,1:trunc1);
+Stilde_t_f = Stilde_f(1:trunc1, 1:trunc1);
+Vtilde_t_f = Vtilde_f(:,1:trunc1); 
+U1tilde_t_f = Utilde_t_f(1:12,:);
+U2tilde_t_f = Utilde_t_f(13:16,:);
 
-%%
-Abar_t = X2*Vtilde_t*pinv(Stilde_t)*U1tilde_t';
-Bbar_t = X2*Vtilde_t*pinv(Stilde_t)*U2tilde_t';
-sys_dmd_t = ss(Abar_t, Bbar_t, Cd, Dd, dT);
+
+Abar_t_f = X2*Vtilde_t_f*pinv(Stilde_t_f)*U1tilde_t_f';
+Bbar_t_f = X2*Vtilde_t_f*pinv(Stilde_t_f)*U2tilde_t_f';
+
+%Let's try fbDMD
+%The theory is as follows: Going from X -> X2 yields a matrix A right? But
+%if we go from X2 -> X we get a matrix let's call G. G^-1 = A if my data is
+%good. We average these motherfuckers and boom it should help denoise the
+%data
+
+%Everything is reversed!
+Upsilon_b = [newVoltages(start+1:stop,1)'; newVoltageShift1(start+1:stop,1)'; newVoltageShift2(start+1:stop,1)'; newVoltageShift3(start+1:stop,1)';];
+
+Omega = [X2; Upsilon_b];
+
+[Utilde_b, Stilde_b, Vtilde_b] = svd(Omega, 'econ');
+
+[Uhat_b, Shat_b, Vhat_b] = svd(X, 'econ');
+
+Utilde_t_b = Utilde_b(:,1:trunc1);
+Stilde_t_b = Stilde_b(1:trunc1, 1:trunc1);
+Vtilde_t_b = Vtilde_b(:,1:trunc1); 
+U1tilde_t_b = Utilde_t_b(1:12,:);
+U2tilde_t_b = Utilde_t_b(13:16,:);
+
+Abar_t_b = X*Vtilde_t_b*pinv(Stilde_t_b)*U1tilde_t_b';
+Bbar_t_b = X*Vtilde_t_b*pinv(Stilde_t_b)*U2tilde_t_b';
+
+
+
+Abar_t = sqrt(Abar_t_b * (Abar_t_f)^-1);
+Bbar_t = sqrt(Bbar_t_b*pinv(Bbar_t_f));
+
+sys_dmd_t = ss(Abar_t_f, Bbar_t_f, Cd, Dd, dT);
+
+

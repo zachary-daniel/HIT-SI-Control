@@ -1,16 +1,16 @@
-clear;close all; clc;
+clear; close all; clc;
 % Initialize data and plot to make sure everything is gucci
 % declare time and voltage for our data
 mdsopen('hitsiu', 220802016);
 Amplitude = 600;
 Amplitude1 = 600;
-Frequency = 19100;%double(mdsvalue('\sihi_freq'));
+Frequency = 19000;%double(mdsvalue('\sihi_freq'));
 RunTime = .004;
 SampleTime = 1e-7; 
-L1 = (8.0141e-7); %H
-L2 = 2.0462e-6; %H
-M = 3.2951e-7;
-Mw = 2.7548e-7;
+L1 = 1.5064e-6; %(8.0141e-7); %H
+L2 = 9.3369e-7;%2.0462e-6; %H
+M = .161*L2; % Coupling coefficient
+Mw = .1346*L2;% Coupling coefficient
 Cap = 96e-6; % F
 R1 = .0025; %Ohm
 R2 = .005; % Ohm

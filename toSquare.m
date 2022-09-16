@@ -38,11 +38,16 @@ function [newValues] = toSquare(values, nada, troughs, peaks, nada_times, trough
     end
     extrema(end) = last_extrema;
     extrema_times(end) = last_extrema_time;
-    for i = 1:length(extrema)-1
+    for i = 1:length(nada_times)-1
         base = nada_times(i+1) - nada_times(i);
         Areas(i,1) = .5*base*extrema(i)*Magic_number;
     end
-    Areas(end) = .5*(nada_times(end) - nada_times(length(nada_times)-1))*extrema(end)*Magic_number;
+    if length(nada_times) < length(extrema)
+        Areas(end) = -.5*(nada_times(end) - nada_times(length(nada_times)-1))*extrema(end)*Magic_number;
+
+    else
+        Areas(end) = .5*(nada_times(end) - nada_times(length(nada_times)-1))*extrema(end)*Magic_number;
+    end
     %Make Square Waves here
     % Make new voltage 
     newValues = zeros(length(values),1);
