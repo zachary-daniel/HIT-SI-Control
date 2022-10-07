@@ -1,6 +1,7 @@
 clear;close all; clc;
 % Initialize data and plot to make sure everything is gucci
 % declare time and voltage for our data
+
 load("All_injectors_vaccum_full_workspace.mat")
 % mdsopen('hitsiu', 220802016);
 penalty = 0;
@@ -212,7 +213,7 @@ syskf = ss(Ad-L*Cd, [Bd L],eye(12), 0*[Bd L], dT);
 %% MPC Loop
 clc;
 ref_signal = voltage; %reference signal to track
-horizon = 29*dT; %size of step horizon in terms of time samples. 29 seems to be the magic number? Not really sure why...
+horizon = 10*dT; %size of step horizon in terms of time samples. 29 seems to be the magic number? Not really sure why...
 step_size = horizon/dT; %size of one horizon in terms of indices 
 total_steps = RunTime/dT;  % number of time samples
 switch_position = 0;

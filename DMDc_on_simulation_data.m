@@ -2,6 +2,9 @@ clear; close all; clc;
 %load("All_injectors_vaccum_full_workspace.mat")
 %load("DMDc_on_old_shot.mat")
 load("All_injectors_vaccum_full_workspace.mat")
+load('Look_at_shot_with_plasma.mat')
+mdsopen('hitsiu', 220816009) 
+L2_from_shot = mdsvalue('\i_fcoil_1');
 % sys_dmd_on_shot_c = sys_dmd;
 % Let's first check that DMDc can somewhat accurately recreate the A and B
 % matrices that come out of the state space model I derived
@@ -10,7 +13,7 @@ time = 0:dT:.004;
 B = sysc.B;
 Q = .001; %diag(.001*ones(1,size(A, 1))); % disturbance covariance
 R = diag(10*ones(1,size(B,2))); % Noise covariance
-noisePower = 1000;
+noisePower = 0;
 
 %% Stuff for single injector model
 % Ad = sys_d.A;
@@ -113,7 +116,7 @@ noisePower = 1000;
 
 %% Let's try doing this on a small sample of the shot data to do a quick time prediction opposed to trying to capture all of the dynamics
 start = 1;
-stop = length(time); % As long as the stop sample is after the circuit goes to steady state this thing works like a charm
+stop = 5000; %length(time); % As long as the stop sample is after the circuit goes to steady state this thing works like a charm
 
 [kalmf, L, P] = kalman(sys_d, Q, R, 0);
 
@@ -222,7 +225,7 @@ Bbar_t_b = X*Vtilde_t_b*pinv(Stilde_t_b)*U2tilde_t_b';
 
 
 
-Abar_t = sqrt(Abar_t_b * (Abar_t_f)^-1);
+Abar_t = sqrt(Abar_t_b * pinv(Abar_t_f));
 Bbar_t = sqrt(Bbar_t_b*pinv(Bbar_t_f));
 
 sys_dmd_t = ss(Abar_t_f, Bbar_t_f, Cd, Dd, dT);
@@ -238,32 +241,36 @@ B_sub_matrices = zeros(100*size(B,1), size(B,2));
 A_avg = zeros(size(A));
 B_avg = zeros(size(B));
 
+Avg_eig_A = zeros(size(12,1));
+
 trunc1 = 4; %Truncation points to make matrix algebra faster
 
-trunc2 = 7;
+trunc2 = 12;
 num_iters = 0;
 
 for i = 1:100
-    X_sub_matrix = X(:, (1*i):5:length(X)); %Build sub matrices of X, X2, and Upsilon
-    X2_sub_matrix = X2(:, (1*i):5:length(X));
-    Upsilon_sub_matrix = Upsilon(:, (1*i):5:length(Upsilon));
+    X_sub_matrix = X(:, i:20000+i); %Build sub matrices of X, X2, and Upsilon
+    X2_sub_matrix = X2(:, i:20000+i);
+    Upsilon_sub_matrix = Upsilon(:, i:20000+i);
   
-    Omega_sub = [X2_sub_matrix;Upsilon_sub_matrix;]; %Stack X and Upsilon
+    Omega_sub = [X_sub_matrix;Upsilon_sub_matrix;]; %Stack X and Upsilon
       %perform SVD
     [Utilde_sub, Stilde_sub, Vtilde_sub] = svd(Omega_sub, 'econ');
    % [Uhat_sub, Shat_sub, Vhat_sub] = svd(X_sub_matrix, 'econ');
     %Break matrices up to truncation points
-%      Utilde_sub_t= Utilde_sub(:,1:trunc1);
-%      Stilde_sub_t = Stilde_sub(1:trunc1, 1:trunc1);
-%     Vtilde_sub_t = Vtilde_sub(:,1:trunc1); 
+     Utilde_sub_t= Utilde_sub(:,1:trunc1);
+     Stilde_sub_t = Stilde_sub(1:trunc1, 1:trunc1);
+     Vtilde_sub_t = Vtilde_sub(:,1:trunc1); 
     %Break up Utilde_sub into U1 and U2tilde. U1 is the dyanamics of the
     %input and U2 is the dynamics of the input
     U1tilde_sub = Utilde_sub(1:12,:);
     U2tilde_sub = Utilde_sub(13:16,:);
     
-    A_sub = X_sub_matrix*Vtilde_sub*pinv(Stilde_sub)*U1tilde_sub'; %construct A and B matrices
-    B_sub = X_sub_matrix*Vtilde_sub*pinv(Stilde_sub)*U2tilde_sub';
-    
+    A_sub = X2_sub_matrix*Vtilde_sub*pinv(Stilde_sub)*U1tilde_sub'; %construct A and B matrices
+    B_sub = X2_sub_matrix*Vtilde_sub*pinv(Stilde_sub)*U2tilde_sub';
+
+    Avg_eig_A = eig(A_sub) + Avg_eig_A;
+
     start_point = (num_iters*12)+1;
     len_a = length(A_sub);
     len_b = length(B_sub);
@@ -272,9 +279,58 @@ for i = 1:100
     B_sub_matrices(start_point:start_point+(len_b-1) ,:) = B_sub;
     A_avg = A_avg + A_sub;
     B_avg = B_avg + B_sub;
-    sys_temp = ss(A_sub, B_sub, Cd, Dd, dT);
+    num_iters = num_iters+1;
+   % sys_temp = ss(A_sub, B_sub, Cd, Dd, dT);
+
 end
 
+Avg_eig_A = Avg_eig_A/i;
 A_avg = A_avg/i;
 B_avg = B_avg/i;
 sys_temp = ss(A_avg, B_avg, Cd, Dd, dT);   
+
+%% Why you no work? Story of my life
+% X_sub = X(:, 1:2:length(X));
+% X2_sub = X2(:, 1:2:length(X2));
+% Upsilon_sub = Upsilon(:, 1:2:length(Upsilon));
+% Omega_sub = [X_sub Upsilon_sub];
+sys_eek = ss(A_tilde, B_tilde, Cd, Dd, dT);
+
+y = lsim(sys_temp, [newVoltages newVoltages newVoltages newVoltages], time);
+
+y2 = lsim(sys_dmd_t, [newVoltages newVoltages newVoltages newVoltages], time);
+figure()
+plot(y(:,1));
+title("Bagging mofucker vs DMDc vs Noisy L2")
+hold on
+plot(y2(:,1));
+
+plot(L2_Current_Flux_1);
+legend('Bagging DMDc', "DMDc", "L2 Current from Sim")
+
+figure()
+y3 = lsim(sys_d, [newVoltages newVoltages newVoltages newVoltages],time);
+plot(y3(:,1));
+hold on
+plot(y(:,1));
+legend('sys_d from state space equations', 'DMDc with bagging');
+
+figure()
+plot(eig(sys_d.A), 'o');
+hold on
+plot(Avg_eig_A, '*');
+legend('eig of sys_d', 'eig of sys from bagged DMDc')
+
+title('Eigenvalues of sys_d vs. eigs of bagged DMDc')
+%%
+figure()
+out =  lsim(sys_dmd_t, [newVoltages newVoltages newVoltages newVoltages], time);
+plot(time, out(:,1), 'LineWidth', 4);
+hold on
+plot(time, L2_Current_Flux_1, 'r')
+title('DMDc vs. Simulation of Flux Coil Current')
+ylabel('Current (Amperes)')
+xlabel('time (s)')
+title('DMDc vs. Simulation of Flux Coil Current')
+legend('DMDc', 'Reference Data')
+ylim([-15000, 15000]);
