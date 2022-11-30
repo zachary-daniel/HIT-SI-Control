@@ -17,9 +17,14 @@ R2 = .005; % Ohm
 R3 = .005;% Ohm
 dT = 1e-7;
 NoisePower = .1;
-PhaseAngle1 = 90;
-PhaseAngle2 = 180;
-PhaseAngle3 = 270;
+PhaseAngle1 = 0;
+PhaseAngle2 = 0;
+PhaseAngle3 = 0;
+%control parameters
+size_A = 12;
+Q_cost = diag(ones(size_A,1));
+R_cost = .001;
+desired_L2_amplitude = 100;
 
 scalar1 = 1/((L2-Mw)*( (L2.^2) - (4*M.^2) + 2*L2*Mw+ (Mw.^2) )); %Scale factor in front of the entries to the A matrix that are affected by mutual inductance
 
@@ -165,6 +170,8 @@ sim("RLC_Sin_To_Square_Backwards.slx", "StopTime", "RunTime")
 % sim("RLC_Sin_To_Square_Backwards.slx")
 time = ans.tout;
 voltage = ans.simout.signals.values;
+desired_sine = desired_L2_amplitude*sin(2*pi*Frequency*time);
+
 
 
 %Locate peaks, troughs, and nada, and change the location data into time
@@ -206,9 +213,16 @@ syskf = ss(Ad-L*Cd, [Bd L],eye(12), 0*[Bd L], dT);
 [yk, tk] = lsim(syskf, [voltage voltage voltage voltage, y], time);
 
 
+%
+%% LQR code
+
+K = lqr(sys_d,Q_cost,R_cost);
+
+
+
 %%
 
-open("Vaccum_circuits_all_injectors.slx")
+open("All_injectors_with_LQG.slx")
 shiftedSignal1.time = time;
 shiftedSignal1.signals.values = newVoltageShift1;
 shiftedSignal2.time = time;
@@ -217,7 +231,7 @@ shiftedSignal3.time = time;
 shiftedSignal3.signals.values = newVoltageShift3;
 simin.time = time;
 simin.signals.values = newVoltages;
-sim("Vaccum_circuits_all_injectors.slx", "StopTime", "RunTime");
+sim("All_injectors_with_LQG.slx", "StopTime", "RunTime");
 figure()
 plot(time, newVoltages)
 hold on
@@ -251,177 +265,3 @@ L2_Current_Flux_3 = ans.L2CurrentFlux3.signals.values;
 L1_Current_Flux_4 = ans.L1CurrentFlux4.signals.values;
 C_Voltage_Flux_4 = ans.CVoltageFlux4.signals.values;
 L2_Current_Flux_4 = ans.L2CurrentFlux4.signals.values;
-
-% Plot L2 vs. L2 Approx
-figure()
-plot(time, L2_Current_Flux_1, "LineWidth",2)
-hold on
-plot(time, L2_Current_Approx_Flux_1, "Linewidth", .25)
-xlabel("Time")
-ylabel("Current")
-title("Noisey Output vs. Kalman Filter Output for L2 Current (Flux 1)")
-legend("True L2 Current with Noise", "Denoised L2 Current from KF", "Location", "northwest")
-
-
-
-
-% Plot C vs. C approx
-figure()
-plot(time, C_Voltage_Flux_1,  "LineWidth", .5)
-hold on
-plot(time, C_Voltage_Approx_Flux_1,'r--', "Linewidth",2)
-C_Voltage_No_Noise = ans.TrueCVoltage.signals.values; % Cap voltage with no noise
-plot(time, C_Voltage_No_Noise, 'g:', 'Linewidth', 2)
-xlabel("Time")
-ylabel("Voltage")
-title("Noisey Output vs. Kalman Filter Output for C Voltage (Flux 1)")
-legend("Cap Voltage with Noise", "Denoised Cap Voltage from KF", 'Cap Voltage no Noise', "Location", "northwest")
-
-
-
-% Plot L1 Current vs. L1 Approx
-figure()
-plot(time, L1_Current_Flux_1, "LineWidth", 2)
-hold on
-plot(time, L1_Current_Approx_Flux_1, "Linewidth", .25)
-xlabel("Time")
-ylabel("Current")
-title("Noisey Output vs. Kalman Filter Output for L1 Current (Flux 1)")
-legend("True L1 Current with Noise", "Denoised L1 Current from KF", "Location", "northwest")
-
-% L2 Current Flux 2
-figure()
-plot(time, L2_Current_Flux_2, "LineWidth",2)
-hold on
-plot(time, L2_Current_Approx_Flux_2, "Linewidth", .25)
-xlabel("Time")
-ylabel("Current")
-title("Noisey Output vs. Kalman Filter Output for L2 Current (Flux 2)")
-legend("True L2 Current with Noise", "Denoised L2 Current from KF", "Location", "northwest")
-
-%C voltage Flux 2
-figure()
-plot(time, C_Voltage_Flux_2, "LineWidth", 5)
-hold on
-plot(time, C_Voltage_Approx_Flux_2, "Linewidth",.25)
-xlabel("Time")
-ylabel("Voltage")
-title("Noisey Output vs. Kalman Filter Output for C Voltage (Flux 2)")
-legend("True C Voltage with Noise", "Denoised C Voltage from KF", "Location", "northwest")
-
-% L1 Current Flux 2
-figure()
-plot(time, L1_Current_Flux_2, "LineWidth", 2)
-hold on
-plot(time, L1_Current_Approx_Flux_2, "Linewidth", .25)
-xlabel("Time")
-ylabel("Current")
-title("Noisey Output vs. Kalman Filter Output for L1 Current (Flux 2)")
-legend("True L1 Current with Noise", "Denoised L1 Current from KF", "Location", "northwest")
-
-
-
-
-% %%
-% close all;
-% figure()
-% % plot(time, L2_Current)
-% % hold on
-% % plot(time, L1_Current)
-% figure()
-% sysFullOutput = ss(A,B,eye(3), D);
-% [y,t] = lsim(sysFullOutput, newVoltages, time);
-% plot(time, y(:,1));
-% legend("calculated", "measured")
-% hold on
-% plot(time, L1_Current);
-% title("L1")
-% figure()
-% plot(time, y(:,2))
-% hold on
-% plot(time, C_Voltage)
-% title("C")
-% legend("calculated", "measured")
-% figure()
-% plot(time, y(:,3))
-% hold on
-% plot(time, L2_Current)
-% title("L2")
-% legend("calculated", "measured")
-% % legend("Lsim L1", "Lsim C", "Lsim L2", "Sim L1", "Sim C", "Sim L2");
-% %Functions below this line
-
-function [ts] = locsToTimes(locs, time)
-    for i = 1:length(locs)
-        t = locs(i);
-        locs(i) = time(t);
-    end
-    ts = locs;
-end
-
-function [newValues] = toSquare(values, nada, troughs, peaks, nada_times, trough_times, peak_times, Amplitude, SampleTime)
-    Magic_number = 4/pi; % Magic number for getting area under sin curve without integrating
-    num_waves = length(nada); % number of individual peaks/troughs
-    Areas = zeros(num_waves,1); % pre-allocate area array
-    first_maxima = 0;
-    second_maxima = 0;
-    first_maxima_times = 0;
-    second_maxima_times = 0;
-    last_extrema = 0;
-    last_extrema_time = 0;
-    if trough_times(1) < peak_times(1) % decide if first extrema is a peak or a trough
-        first_maxima = troughs;
-        first_maxima_times = trough_times;
-        second_maxima = peaks;
-        second_maxima_times = peak_times;
-    else
-        first_maxima = peaks;
-        first_maxima_times = peak_times;
-        second_maxima = troughs;
-        second_maxima_times = trough_times;
-    end
-    if trough_times(end) < peak_times(end)
-        last_extrema = peaks(end);
-        last_extrema_time = peak_times(end);
-    else
-        last_extrema = troughs(end);
-        last_extrema_time = trough_times(end);
-    end
-    extrema = zeros(length(troughs)+length(peaks), 1);
-    extrema_times = zeros(length(trough_times)+length(peak_times),1);
-    index = 1;
-    for i = 1:2:length(extrema)-1
-        extrema(i,1) = first_maxima(index);
-        extrema(i+1,1) = second_maxima(index);
-        extrema_times(i,1) = first_maxima_times(index);
-        extrema_times(i+1,1) = second_maxima_times(index);
-        index=index+1;
-    end
-    extrema(end) = last_extrema;
-    extrema_times(end) = last_extrema_time;
-    for i = 1:length(nada_times)-1
-        base = nada_times(i+1) - nada_times(i);
-        Areas(i,1) = .5*base*extrema(i)*Magic_number;
-    end
-    if length(nada_times) < length(extrema)
-        Areas(end) = -.5*(nada_times(end) - nada_times(length(nada_times)-1))*extrema(end)*Magic_number;
-
-    else
-        Areas(end) = .5*(nada_times(end) - nada_times(length(nada_times)-1))*extrema(end)*Magic_number;
-    end
-    %Make Square Waves here
-    % Make new voltage 
-    newValues = zeros(length(values),1);
-    Amplitude = 600;
-    for i = 1:length(Areas)
-        width = abs(Areas(i)/Amplitude);
-        b1 = round((extrema_times(i)-width/2)/SampleTime);
-        b2 = round((extrema_times(i) + width/2)/SampleTime);
-        if Areas(i) < 0
-            newValues(b1:b2,1) = -Amplitude;
-        else 
-            newValues(b1:b2,1) = Amplitude;
-        end
-    end
-end
-

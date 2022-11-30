@@ -248,41 +248,41 @@ trunc1 = 4; %Truncation points to make matrix algebra faster
 trunc2 = 12;
 num_iters = 0;
 
-for i = 1:100
-    X_sub_matrix = X(:, i:20000+i); %Build sub matrices of X, X2, and Upsilon
-    X2_sub_matrix = X2(:, i:20000+i);
-    Upsilon_sub_matrix = Upsilon(:, i:20000+i);
-  
-    Omega_sub = [X_sub_matrix;Upsilon_sub_matrix;]; %Stack X and Upsilon
-      %perform SVD
-    [Utilde_sub, Stilde_sub, Vtilde_sub] = svd(Omega_sub, 'econ');
-   % [Uhat_sub, Shat_sub, Vhat_sub] = svd(X_sub_matrix, 'econ');
-    %Break matrices up to truncation points
-     Utilde_sub_t= Utilde_sub(:,1:trunc1);
-     Stilde_sub_t = Stilde_sub(1:trunc1, 1:trunc1);
-     Vtilde_sub_t = Vtilde_sub(:,1:trunc1); 
-    %Break up Utilde_sub into U1 and U2tilde. U1 is the dyanamics of the
-    %input and U2 is the dynamics of the input
-    U1tilde_sub = Utilde_sub(1:12,:);
-    U2tilde_sub = Utilde_sub(13:16,:);
-    
-    A_sub = X2_sub_matrix*Vtilde_sub*pinv(Stilde_sub)*U1tilde_sub'; %construct A and B matrices
-    B_sub = X2_sub_matrix*Vtilde_sub*pinv(Stilde_sub)*U2tilde_sub';
-
-    Avg_eig_A = eig(A_sub) + Avg_eig_A;
-
-    start_point = (num_iters*12)+1;
-    len_a = length(A_sub);
-    len_b = length(B_sub);
-
-    A_sub_matrices(start_point:start_point+(len_a-1) ,:) = A_sub;
-    B_sub_matrices(start_point:start_point+(len_b-1) ,:) = B_sub;
-    A_avg = A_avg + A_sub;
-    B_avg = B_avg + B_sub;
-    num_iters = num_iters+1;
-   % sys_temp = ss(A_sub, B_sub, Cd, Dd, dT);
-
-end
+% for i = 1:100
+%     X_sub_matrix = X(:, i:20000+i); %Build sub matrices of X, X2, and Upsilon
+%     X2_sub_matrix = X2(:, i:20000+i);
+%     Upsilon_sub_matrix = Upsilon(:, i:20000+i);
+%   
+%     Omega_sub = [X_sub_matrix;Upsilon_sub_matrix;]; %Stack X and Upsilon
+%       %perform SVD
+%     [Utilde_sub, Stilde_sub, Vtilde_sub] = svd(Omega_sub, 'econ');
+%    % [Uhat_sub, Shat_sub, Vhat_sub] = svd(X_sub_matrix, 'econ');
+%     %Break matrices up to truncation points
+%      Utilde_sub_t= Utilde_sub(:,1:trunc1);
+%      Stilde_sub_t = Stilde_sub(1:trunc1, 1:trunc1);
+%      Vtilde_sub_t = Vtilde_sub(:,1:trunc1); 
+%     %Break up Utilde_sub into U1 and U2tilde. U1 is the dyanamics of the
+%     %input and U2 is the dynamics of the input
+%     U1tilde_sub = Utilde_sub(1:12,:);
+%     U2tilde_sub = Utilde_sub(13:16,:);
+%     
+%     A_sub = X2_sub_matrix*Vtilde_sub*pinv(Stilde_sub)*U1tilde_sub'; %construct A and B matrices
+%     B_sub = X2_sub_matrix*Vtilde_sub*pinv(Stilde_sub)*U2tilde_sub';
+% 
+%     Avg_eig_A = eig(A_sub) + Avg_eig_A;
+% 
+%     start_point = (num_iters*12)+1;
+%     len_a = length(A_sub);
+%     len_b = length(B_sub);
+% 
+%     A_sub_matrices(start_point:start_point+(len_a-1) ,:) = A_sub;
+%     B_sub_matrices(start_point:start_point+(len_b-1) ,:) = B_sub;
+%     A_avg = A_avg + A_sub;
+%     B_avg = B_avg + B_sub;
+%     num_iters = num_iters+1;
+%    % sys_temp = ss(A_sub, B_sub, Cd, Dd, dT);
+% 
+% end
 
 Avg_eig_A = Avg_eig_A/i;
 A_avg = A_avg/i;
@@ -327,10 +327,11 @@ figure()
 out =  lsim(sys_dmd_t, [newVoltages newVoltages newVoltages newVoltages], time);
 plot(time, out(:,1), 'LineWidth', 4);
 hold on
-plot(time, L2_Current_Flux_1, 'r')
+plot(time, L2_Current_Flux_1, '--g', 'LineWidth',1)
+
+title('DMDc vs. Simulation of Flux Coil Current', 'FontSize', 30)
+ylabel('Current (Amperes)', 'FontSize', 20)
+xlabel('time (s)', 'FontSize',20)
 title('DMDc vs. Simulation of Flux Coil Current')
-ylabel('Current (Amperes)')
-xlabel('time (s)')
-title('DMDc vs. Simulation of Flux Coil Current')
-legend('DMDc', 'Reference Data')
-ylim([-15000, 15000]);
+legend('DMDc', 'Reference Data', 'FontSize', 20)
+ylim([-12000, 12000]);

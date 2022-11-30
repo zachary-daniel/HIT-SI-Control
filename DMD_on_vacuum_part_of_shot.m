@@ -136,10 +136,10 @@ B_avg = B_avg/i;
 sys_temp = ss(A_avg, B_avg, C, D, dT);
 
 
-plot(eig(A), '*', "LineStyle", "none", "MarkerSize", 12)
-title("Eigenvalues of A matrix from DMDc on Vacuum Shot")
-xlabel('Real part')
-ylabel('Imaginary part')
+plot(eig(A), '*', "LineStyle", "none", "MarkerSize", 25)
+title("Eigenvalues of A matrix from DMDc on Vacuum Shot", 'fontsize', 30)
+xlabel('Real part', 'fontsize', 20)
+ylabel('Imaginary part', 'fontsize', 20)
 hold on
 plot(eig(Ad), 'r*', 'LineStyle','none',"MarkerSize", 12)
-legend('Eigenvalues from DMDc', "Eigenvalues from statespace model")
+legend('Eigenvalues from DMDc', "Eigenvalues from statespace model", 'fontsize', 20)
