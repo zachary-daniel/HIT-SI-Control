@@ -16,10 +16,10 @@ R1 = .0025; %Ohm
 R2 = .005; % Ohm
 R3 = .005;% Ohm
 dT = 1e-7;
-NoisePower = .1;
-PhaseAngle1 = 90;
-PhaseAngle2 = 180;
-PhaseAngle3 = 270;
+NoisePower = 0;
+PhaseAngle1 = 0;
+PhaseAngle2 = 0;
+PhaseAngle3 = 0;
 
 scalar1 = 1/((L2-Mw)*( (L2.^2) - (4*M.^2) + 2*L2*Mw+ (Mw.^2) )); %Scale factor in front of the entries to the A matrix that are affected by mutual inductance
 

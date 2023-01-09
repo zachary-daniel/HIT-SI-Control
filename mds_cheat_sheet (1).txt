@@ -20,3 +20,7 @@ imp_L2 = mdsvalue('zrat(\v_div_1_fc,\i_1_fcoil)'); % this should give the comple
 
 
 sihi_smooth : boxcar averages signal at injector frequency
+
+
+\i_tor_spaavg % toroidal plasma current
+\v_inj_# % to take the total loop voltage take the magnitude of these

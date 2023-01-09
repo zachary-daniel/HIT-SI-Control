@@ -1,13 +1,11 @@
-clear; close all; clc;
-% Initialize data and plot to make sure everything is gucci
-% declare time and voltage for our data
-% Resistance of plasma is order 100 micro-ohms
-mdsopen('hitsiu', 221129065);
+clear;close all;clc;
+load("All_injectors_with_LQQ_code.mat")
 Amplitude = 600;
 Amplitude1 = 600;
 Frequency = 19000;%double(mdsvalue('\sihi_freq'));
 RunTime = .004;
 SampleTime = 1e-7; 
+time = (0:SampleTime:RunTime);
 L1 = (8.0141e-7); %H
 L2 = 2.0462e-6; %H
 M = .161*L2; % Coupling coefficient
@@ -21,17 +19,18 @@ NoisePower = 0;
 PhaseAngle1 = 0;
 PhaseAngle2 = 0;
 PhaseAngle3 = 0;
+voltage = 600*sin(2*pi*Frequency*time)';
 %control parameters
 size_A = 12;
-accuracy_penalty = 30;
+accuracy_penalty = 100;
 Q_cost = diag(ones(size_A,1));
 Q_cost(3,3) = accuracy_penalty;
 Q_cost(6,6) = accuracy_penalty;
 Q_cost(9,9) = accuracy_penalty;
 Q_cost(12,12) = accuracy_penalty;
 R_cost = 1;
-desired_L2_amplitude = 8500;
-
+desired_L2_amplitude = 6000;
+desired_L2_wave = desired_L2_amplitude*sin(2*pi*Frequency*time);
 
 scalar1 = 1/((L2-Mw)*( (L2.^2) - (4*M.^2) + 2*L2*Mw+ (Mw.^2) )); %Scale factor in front of the entries to the A matrix that are affected by mutual inductance
 
@@ -162,122 +161,13 @@ H = zeros(3,3);
 
 Q = .001; %diag(.001*ones(1,size(A, 1))); % disturbance covariance
 R = diag(10*ones(1,size(B,2))); % Noise covariance
-time = (0:SampleTime:RunTime);
-backwards_vals = (Amplitude*sin(time*Frequency*2*pi));
 
-scaling_amplitude = 1; %(sin(time*2*pi*Frequency/20)); %This is a test that the method works for sin waves that scale up and down in amplitude
-
-
-
-%%
-backwards_circuit_simin.time = (time)';
-time = 0:SampleTime:RunTime;
-backwards_circuit_simin.signals.values = (scaling_amplitude.*backwards_vals)';
-sim("RLC_Sin_To_Square_Backwards.slx", "StopTime", "RunTime")
-% sim("RLC_Sin_To_Square_Backwards.slx")
-time = ans.tout;
-voltage = ans.simout.signals.values;
-desired_sine = desired_L2_amplitude*sin(2*pi*Frequency*time);
-
-
-
-%Locate peaks, troughs, and nada, and change the location data into time
-%data
-
-[nada, loc_nada] = findpeaks(-(abs(voltage))); % nada
-
-
-%Plot the wave with peaks, nada, troughs
-% figure(1)
-% title("Peaks, Troughs, nada of Sine Wave")
-% xlabel("Time")
-% ylabel("Amplitude")
-% plot(time, voltage, "Color", "g")
-% hold on
-% plot(trough_times, troughs, "ok")
-% hold on
-% plot(peak_times, peaks, "or")
-% hold on
-% plot(nada_times, nada, "ob")
-% legend("voltage", "Troughs", "Peaks", "nada")
-% figure(2)
-% plot(time, -abs(voltage))
-
-[newVoltages] = toSquare(voltage, Amplitude, SampleTime, time);
-[newVoltageShift1] = phaseShift(newVoltages, PhaseAngle1, loc_nada);
-[newVoltageShift2] = phaseShift(newVoltages, PhaseAngle2, loc_nada);
-[newVoltageShift3] = phaseShift(newVoltages, PhaseAngle3, loc_nada);
-injector1 = zeros(size(newVoltages));
-%Kalman filter bitch
 [kalmf, L, P] = kalman(sys_d, Q, R, 0);
 
 syskf = ss(Ad-L*Cd, [Bd L],eye(12), 0*[Bd L], dT);
-[y,t] = lsim(sys_d, [voltage voltage voltage voltage], time);
-[yk, tk] = lsim(syskf, [voltage voltage voltage voltage, y], time);
 
 
 %
 %% LQR code
 
 K = lqr(sys_d,Q_cost,R_cost);
-
-
-
-%%
-
-open("All_injectors_with_LQG.slx")
-shiftedSignal1.time = time;
-shiftedSignal1.signals.values = newVoltageShift1;
-shiftedSignal2.time = time;
-shiftedSignal2.signals.values = newVoltageShift2;
-shiftedSignal3.time = time;
-shiftedSignal3.signals.values = newVoltageShift3;
-simin.time = time;
-simin.signals.values = newVoltages;
-sim("All_injectors_with_LQG.slx", "StopTime", "RunTime");
-% figure()
-% plot(time, newVoltages)
-% hold on
-% plot(time, voltage, "r")
-% xlabel("Time")
-% ylabel("Input Voltage")
-% title("Conversion of Sin wave to Square Wave for H-Bridge")
-% legend("Input to H-Bridge", "Output of Reverse Circuit")
-
-% Grab Klaman Filter outputs and get corresponding values
-L2_Current_Flux_1 = ans.L2CurrentFlux1.signals.values;
-C_Voltage_Flux_1 = ans.CVoltageFlux1.signals.values;
-L1_Current_Flux_1 = ans.L1CurrentFlux1.signals.values;
-L2_Current_Approx_Flux_1= ans.KalmanFilterOutputsFlux1.signals.values(:,3);
-C_Voltage_Approx_Flux_1 = ans.KalmanFilterOutputsFlux1.signals.values(:,2);
-L1_Current_Approx_Flux_1 = ans.KalmanFilterOutputsFlux1.signals.values(:,1);
-
-L2_Current_Flux_2 = ans.L2CurrentFlux2.signals.values;
-C_Voltage_Flux_2 = ans.CVoltageFlux2.signals.values;
-L1_Current_Flux_2 = ans.L1CurrentFlux2.signals.values;
-
-L2_Current_Approx_Flux_2 = ans.KalmanFilterOutputsFlux1.signals.values(:,6);
-C_Voltage_Approx_Flux_2 = ans.KalmanFilterOutputsFlux1.signals.values(:,5);
-L1_Current_Approx_Flux_2 = ans.KalmanFilterOutputsFlux1.signals.values(:,4);
-
-L1_Current_Approx_Flux_3 = ans.KalmanFilterOutputsFlux1.signals.values(:,7);
-L1_Current_Flux_3 = ans.L1CurrentFlux3.signals.values;
-C_Voltage_Flux_3 = ans.CVoltageFlux3.signals.values;
-L2_Current_Flux_3 = ans.L2CurrentFlux3.signals.values;
-
-L1_Current_Flux_4 = ans.L1CurrentFlux4.signals.values;
-C_Voltage_Flux_4 = ans.CVoltageFlux4.signals.values;
-L2_Current_Flux_4 = ans.L2CurrentFlux4.signals.values;
-
-
-
-LQR_Outputs = ans.LQR_Outputs.signals.values;
-
-
-
-%% 
-
-plot(L2_Current_Flux_1)
-hold on
-plot(LQR_Outputs(:,1))
-
