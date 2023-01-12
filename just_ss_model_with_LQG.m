@@ -1,6 +1,6 @@
 clear;close all;clc;
 load("All_injectors_with_LQQ_code.mat")
-Amplitude = 600;
+Amplitude = 520;
 Amplitude1 = 600;
 Frequency = 19000;%double(mdsvalue('\sihi_freq'));
 RunTime = .004;
@@ -15,11 +15,12 @@ R1 = .0025; %Ohm
 R2 = .005; % Ohm
 R3 = .005;% Ohm
 dT = 1e-7;
+
 NoisePower = 0;
 PhaseAngle1 = 0;
 PhaseAngle2 = 0;
 PhaseAngle3 = 0;
-voltage = 600*sin(2*pi*Frequency*time)';
+%voltage = 600*sin(2*pi*Frequency*time)';
 %control parameters
 size_A = 12;
 accuracy_penalty = 100;
@@ -159,15 +160,55 @@ Dd = sys_d.D;
 G = eye(3);
 H = zeros(3,3);
 
-Q = .001; %diag(.001*ones(1,size(A, 1))); % disturbance covariance
-R = diag(10*ones(1,size(B,2))); % Noise covariance
+Q = 1; %diag(.001*ones(1,size(A, 1))); % disturbance covariance
+R = diag(1*ones(1,size(B,2))); % Noise covariance
 
 [kalmf, L, P] = kalman(sys_d, Q, R, 0);
 
-syskf = ss(Ad-L*Cd, [Bd L],eye(12), 0*[Bd L], dT);
+syskf = ss(Ad-L*Cd, [Bd L],eye(12), 0*[Bd L]);
 
 
-%
-%% LQR code
+
+backwards_vals = (Amplitude*sin(time*Frequency*2*pi));
+
+scaling_amplitude = 1; %(sin(time*2*pi*Frequency/20)); %This is a test that the method works for sin waves that scale up and down in amplitude
+
+
+
+%%
+backwards_circuit_simin.time = (time)';
+time = 0:SampleTime:RunTime;
+backwards_circuit_simin.signals.values = (scaling_amplitude.*backwards_vals)';
+sim("RLC_Sin_To_Square_Backwards.slx", "StopTime", "RunTime")
+% sim("RLC_Sin_To_Square_Backwards.slx")
+time = ans.tout;
+voltage = ans.simout.signals.values;
+desired_sine = desired_L2_amplitude*sin(2*pi*Frequency*time);
+
+square_voltage = toSquare(voltage, Amplitude, SampleTime, time);
+
+% LQR code
 
 K = lqr(sys_d,Q_cost,R_cost);
+
+%%
+simin.signals.values = square_voltage;
+simin.time = time;
+
+sim("All_injectors_LQG_just_ss_model.slx", 'StopTime', 'RunTime')
+
+%
+
+
+Kalman_outputs = ans.KalmanFilter.signals.values;
+
+StateSpaceModel_outputs = ans.StateSpaceModel.signals.values;
+
+plot(time,StateSpaceModel_outputs(:,1), 'LineWidth',1); %L2 Current F1, Kalman estimation
+hold on
+plot(time,Kalman_outputs(:,3))
+title('Output of ss model vs. Kalman filter')
+legend('Actual L2 Current', 'Kalman Filter')
+
+
+
