@@ -1,5 +1,5 @@
 clear;close all;clc;
-load("All_injectors_with_LQQ_code.mat")
+
 Amplitude = 520;
 Amplitude1 = 600;
 Frequency = 19000;%double(mdsvalue('\sihi_freq'));
@@ -23,16 +23,16 @@ PhaseAngle3 = 0;
 %voltage = 600*sin(2*pi*Frequency*time)';
 %control parameters
 size_A = 12;
-accuracy_penalty = 100;
+accuracy_penalty = 10000;
 Q_cost = diag(ones(size_A,1));
 Q_cost(3,3) = accuracy_penalty;
 Q_cost(6,6) = accuracy_penalty;
 Q_cost(9,9) = accuracy_penalty;
 Q_cost(12,12) = accuracy_penalty;
-R_cost = 1;
-desired_L2_amplitude = 6000;
-desired_L2_wave = desired_L2_amplitude*sin(2*pi*Frequency*time);
-
+R_cost = .01;
+%desired_L2_amplitude = 6000;
+s = load('desired_L2_wave.mat');
+desired_L2_wave = s.L2_Current_Flux_1;
 scalar1 = 1/((L2-Mw)*( (L2.^2) - (4*M.^2) + 2*L2*Mw+ (Mw.^2) )); %Scale factor in front of the entries to the A matrix that are affected by mutual inductance
 
 x3a =  (-L2.^2)*R2+(2*M.^2)*R2-L2*Mw*R2;
@@ -176,25 +176,25 @@ scaling_amplitude = 1; %(sin(time*2*pi*Frequency/20)); %This is a test that the 
 
 
 %%
-backwards_circuit_simin.time = (time)';
-time = 0:SampleTime:RunTime;
-backwards_circuit_simin.signals.values = (scaling_amplitude.*backwards_vals)';
-sim("RLC_Sin_To_Square_Backwards.slx", "StopTime", "RunTime")
-% sim("RLC_Sin_To_Square_Backwards.slx")
-time = ans.tout;
-voltage = ans.simout.signals.values;
-desired_sine = desired_L2_amplitude*sin(2*pi*Frequency*time);
-
-square_voltage = toSquare(voltage, Amplitude, SampleTime, time);
+% backwards_circuit_simin.time = (time)';
+% time = 0:SampleTime:RunTime;
+% backwards_circuit_simin.signals.values = (scaling_amplitude.*backwards_vals)';
+% sim("RLC_Sin_To_Square_Backwards.slx", "StopTime", "RunTime")
+% % sim("RLC_Sin_To_Square_Backwards.slx")
+% time = ans.tout;
+% voltage = ans.simout.signals.values;
+% 
+% 
+% square_voltage = toSquare(voltage, Amplitude, SampleTime, time);
 
 % LQR code
 
 K = lqr(sys_d,Q_cost,R_cost);
 
 %%
-simin.signals.values = square_voltage;
+simin.signals.values = desired_L2_wave;
 simin.time = time;
-
+open('All_injectors_LQG_just_ss_model.slx')
 sim("All_injectors_LQG_just_ss_model.slx", 'StopTime', 'RunTime')
 
 %
@@ -204,11 +204,25 @@ Kalman_outputs = ans.KalmanFilter.signals.values;
 
 StateSpaceModel_outputs = ans.StateSpaceModel.signals.values;
 
+Control_Inputs = ans.ControlInputs.signals.values;
+
 plot(time,StateSpaceModel_outputs(:,1), 'LineWidth',1); %L2 Current F1, Kalman estimation
 hold on
 plot(time,Kalman_outputs(:,3))
 title('Output of ss model vs. Kalman filter')
 legend('Actual L2 Current', 'Kalman Filter')
 
+figure()
+plot(time, StateSpaceModel_outputs(:,1))
+hold on
+plot(time,desired_L2_wave)
+title("Output of ss model vs. desired waveform")
+legend('SS model', 'desired wave')
 
+figure()
+plot(time, Control_Inputs)
+title('Inputs to SS model from LQG')
+legend('Inputs')
+ylabel('Voltage (V)')
+xlabel('time')
 
