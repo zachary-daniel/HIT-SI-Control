@@ -1,0 +1,10 @@
+//Do all this in anaconda prompt
+
+cd pysindy/examples/18_linear_stable_models
+
+jupyter notebook
+
+//get latest changes
+cd pysindy
+
+git pull

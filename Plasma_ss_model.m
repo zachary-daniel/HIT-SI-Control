@@ -2,7 +2,7 @@ clear; close all; clc;
 % Initialize data and plot to make sure everything is gucci
 % declare time and voltage for our data
 run('init_vals_for_plasma_model_code.m')
-mdsopen('hitsiu', 220926010);
+% mdsopen('hitsiu', 220926010);
 Amplitude = 600;
 Amplitude1 = 600;
 Frequency = 19000;%double(mdsvalue('\sihi_freq'));

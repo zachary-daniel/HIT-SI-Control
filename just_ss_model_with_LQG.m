@@ -160,7 +160,7 @@ Dd = sys_d.D;
 G = eye(3);
 H = zeros(3,3);
 
-Q = 1; %diag(.001*ones(1,size(A, 1))); % disturbance covariance
+Q = diag(.001*ones(1,size(B, 2))); % disturbance covariance
 R = diag(1*ones(1,size(B,2))); % Noise covariance
 
 [kalmf, L, P] = kalman(sys_d, Q, R, 0);

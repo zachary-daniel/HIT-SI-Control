@@ -44,14 +44,8 @@ voltage = ans.simout.signals.values;
 %Locate peaks, troughs, and nada, and change the location data into time
 %data
 
-[peaks, loc_peaks] = findpeaks(voltage); % Peaks
-[troughs, loc_troughs] = findpeaks(-voltage); %Troughs
-[peak_times] = locsToTimes(loc_peaks, time); %Peak times
-[trough_times] = locsToTimes(loc_troughs, time); %Trough times
-[nada, loc_nada] = findpeaks(-(abs(voltage))); % nada
-[nada_times] = locsToTimes(loc_nada, time); % nada times
-troughs = -troughs;
 
+toSquare(voltage, Amplitude, )
 
 [newVoltages] = toSquare(voltage, nada, troughs, peaks, nada_times, trough_times, peak_times, Amplitude, SampleTime);
 [newVoltageShift1] = phaseShift(newVoltages, PhaseAngle1, loc_nada);
