@@ -150,12 +150,12 @@ C = sysc.C;
 D = sysc.D;
 
 %Discrete Time System
-sys_d = c2d(sysc, dT, 'zoh');
+sys_d_vacuum = c2d(sysc, dT, 'zoh');
 
-Ad = sys_d.A;
-Bd = sys_d.B;
-Cd = sys_d.C;
-Dd = sys_d.D;
+Ad = sys_d_vacuum.A;
+Bd = sys_d_vacuum.B;
+Cd = sys_d_vacuum.C;
+Dd = sys_d_vacuum.D;
 
 G = eye(3);
 H = zeros(3,3);
@@ -163,9 +163,9 @@ H = zeros(3,3);
 Q = diag(.001*ones(1,size(B, 2))); % disturbance covariance
 R = diag(1*ones(1,size(B,2))); % Noise covariance
 
-[kalmf, L, P] = kalman(sys_d, Q, R, 0);
+[kalmf, L, P] = kalman(sys_d_vacuum, Q, R, 0);
 
-syskf = ss(Ad-L*Cd, [Bd L],eye(12), 0*[Bd L]);
+syskf_vacuum = ss(Ad-L*Cd, [Bd L],eye(12), 0*[Bd L],dT);
 
 
 
@@ -173,7 +173,9 @@ backwards_vals = (Amplitude*sin(time*Frequency*2*pi));
 
 scaling_amplitude = 1; %(sin(time*2*pi*Frequency/20)); %This is a test that the method works for sin waves that scale up and down in amplitude
 
+voltage = Amplitude*sin(2*pi*Frequency*time);
 
+newVoltage = toSquare(voltage, Amplitude,SampleTime,time);
 
 %%
 % backwards_circuit_simin.time = (time)';
@@ -189,7 +191,7 @@ scaling_amplitude = 1; %(sin(time*2*pi*Frequency/20)); %This is a test that the 
 
 % LQR code
 
-K = lqr(sys_d,Q_cost,R_cost);
+K_vacuum = lqr(sys_d_vacuum,Q_cost,R_cost);
 
 %%
 simin.signals.values = desired_L2_wave;
