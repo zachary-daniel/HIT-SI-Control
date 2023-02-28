@@ -20,8 +20,8 @@ R1 = .0025; %Ohm
 R2 = .005; % Ohm
 R3 = .005;% Ohm
 Lp = L2/5; %Henry
-Mp = Lp/2; % Henry
-Rp = R2;
+Mp = 1e-10; % Henry
+Rp = 1e-13;
 Vp = 0;
 size_A = 13; %dimension of A matrix
 num_inputs = 4;
@@ -45,7 +45,7 @@ s = load('desired_L2_wave.mat');
 desired_L2_wave = s.L2_Current_Flux_1;
 
 
-sys_d_vacuum = load("sys_d_vacuum.mat").sys_d_vacuum; %discrete time vacuum circuit model
+sys_d_vacuum = load("sys_d_vacuum.mat").sys_d; %discrete time vacuum circuit model
 syskf_vacuum = load('syskf_vacuum.mat').syskf_vacuum; %discrete timekalman filter for vacuum circuit
 K_vacuum = load('lqr_gain_vacuum.mat').K_vacuum; %LQR gain matrix for vacuum model;
 

@@ -53,7 +53,7 @@ x6l = L2*M*R2-M*Mw*R2+L2*M*R3-M*Mw*R3;
 %Entries for x9 in A matrix
 x9a = -L2*M*R2 + M*Mw*R2;
 x9b = -L2* M + M* Mw;
-x9c = L2* M* R2 - M* Mw* R2 * + L2* M *R3  - M* Mw* R3 ;
+x9c = L2* M* R2 - M* Mw* R2 + L2* M *R3  - M* Mw* R3 ;
 x9d = 2* (M.^2) *R2 - L2*Mw* R2 - (Mw.^2) *R2;
 x9e = 2 *(M.^2) - L2* Mw - (Mw.^2);
 x9f = -2* (M.^2)* R2+ L2 *Mw *R2 + (Mw.^2) *R2 - 2* (M.^2) *R3 + L2 *Mw* R3 + (Mw.^2) *R3;
