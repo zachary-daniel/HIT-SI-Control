@@ -1,5 +1,6 @@
-function [newVals] = phaseShift(vals, shift, loc_nada) % takes shift in degrees
-    shift = mod(shift, 360); % mods phase shift by 360
+function [newVals] = phaseShift(vals, shift) % takes shift in degrees
+[nada, loc_nada] = findpeaks(-(abs(vals))); % nada    
+shift = mod(shift, 360); % mods phase shift by 360
     newVals = zeros(size(vals)); %New array of values pre-allocated
     period = loc_nada(3) - loc_nada(1); % period determined by zero times
     cut_off = round(period*(shift/360));

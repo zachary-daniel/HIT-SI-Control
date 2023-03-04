@@ -1,3 +1,4 @@
+
 clear; close all; clc;
 % Initialize data and plot to make sure everything is gucci
 % declare time and voltage for our data

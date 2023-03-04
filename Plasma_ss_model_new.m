@@ -20,8 +20,8 @@ R1 = .0025; %Ohm
 R2 = .005; % Ohm
 R3 = .005;% Ohm
 Lp = L2/5; %Henry
-Mp = 1e-10; % Henry
-Rp = 1e-13;
+Mp = L2/5; % Henry
+Rp = R2;
 Vp = 0;
 size_A = 13; %dimension of A matrix
 num_inputs = 4;
@@ -101,17 +101,17 @@ state_coeff = [-(R1+R2)/L1,-1/L1,R2/L1,0,0,0,0,0,0,0,0,0,0;
 %coeff in front of state derivatives x_dot
 state_derivative_coeff = [1,0,0,0,0,0,0,0,0,0,0,0,0;
                           0,1,0,0,0,0,0,0,0,0,0,0,0;
-                          0,0,-L2,0,0,-M,0,0,-M,0,0,-Mw,-Mp
+                          0,0,-L2,0,0,-M,0,0,-M,0,0,-Mw,Mp
                           0,0,0,1,0,0,0,0,0,0,0,0,0;
                           0,0,0,0,1,0,0,0,0,0,0,0,0;
                           0,0,-M,0,0,-L2,0,0,-Mw,0,0,-M,-Mp;
                           0,0,0,0,0,0,1,0,0,0,0,0,0;
                           0,0,0,0,0,0,0,1,0,0,0,0,0;
-                          0,0,-M,0,0,-Mw,0,0,-L2,0,0,-M,-Mp;
+                          0,0,-M,0,0,-Mw,0,0,-L2,0,0,-M, Mp;
                           0,0,0,0,0,0,0,0,0,1,0,0,0;
                           0,0,0,0,0,0,0,0,0,0,1,0,0;
                           0,0,-Mw,0,0,-M,0,0,-M,0,0,-L2,-Mp;
-                          0,0,-Mp,0,0,-Mp,0,0,-Mp,0,0,-Mp,-Lp];
+                          0,0,Mp,0,0,-Mp,0,0,-Mp,0,0,Mp,-Lp];
 
 %compute A matrix
 A = (state_derivative_coeff) \ state_coeff;
@@ -179,10 +179,25 @@ syskf_plasma = ss(Ad-L*Cd, [Bd L], eye(size_A), 0*[Bd L], dT);
 K_plasma = lqr(sys_d_plasma,Q_cost,R_cost);
 
 
-simin.signals.values = desired_L2_wave;
-simin.time = time;
+
+desired1.signals.values = desired_L2_wave;
+desired1.time = time;
+
+desired2.signals.values = phaseShift(desired_L2_wave,90);
+desired2.time = time;
+
+
+desired3.signals.values = phaseShift(desired_L2_wave,180);
+desired3.time = time;
+
+desired4.signals.values = phaseShift(desired_L2_wave,270);
+desired4.time = time;
 
 time_plasma = (0:dT:(RunTime-FormationTime));
+
+simin.signals.values = desired_L2_wave(1:length(time_plasma),:);
+simin.time = time_plasma;
+
 dc_plasma_voltage.signals.values = Vp*(0:dT:(RunTime-FormationTime))';
 dc_plasma_voltage.time = time_plasma;
 
@@ -190,6 +205,9 @@ dc_plasma_voltage.time = time_plasma;
 sim('All_injectors_LQG_just_ss_model.slx', 'StopTime', 'FormationTime')
 init_vals_plasma = ans.KalmanFilter.signals.values(end,:);
 
+
+%% Simulate Plasma
+sim('All_injectors_LQG_plasma_ss_model.slx', 'StopTime', 'FormationTime')
 
 % 
 % figure()
