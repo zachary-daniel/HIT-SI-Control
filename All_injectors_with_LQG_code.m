@@ -2,7 +2,7 @@ clear; close all; clc;
 % Initialize data and plot to make sure everything is gucci
 % declare time and voltage for our data
 % Resistance of plasma is order 100 micro-ohms
-mdsopen('hitsiu', 221129065);
+% mdsopen('hitsiu', 221129065);
 Amplitude = 600;
 Amplitude1 = 600;
 Frequency = 19000;%double(mdsvalue('\sihi_freq'));
@@ -204,9 +204,9 @@ desired_sine = desired_L2_amplitude*sin(2*pi*Frequency*time);
 % plot(time, -abs(voltage))
 
 [newVoltages] = toSquare(voltage, Amplitude, SampleTime, time);
-[newVoltageShift1] = phaseShift(newVoltages, PhaseAngle1, loc_nada);
-[newVoltageShift2] = phaseShift(newVoltages, PhaseAngle2, loc_nada);
-[newVoltageShift3] = phaseShift(newVoltages, PhaseAngle3, loc_nada);
+[newVoltageShift1] = phaseShift(newVoltages, PhaseAngle1);
+[newVoltageShift2] = phaseShift(newVoltages, PhaseAngle2);
+[newVoltageShift3] = phaseShift(newVoltages, PhaseAngle3);
 injector1 = zeros(size(newVoltages));
 %Kalman filter bitch
 [kalmf, L, P] = kalman(sys_d, Q, R, 0);

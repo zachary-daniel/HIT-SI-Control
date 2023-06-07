@@ -4,6 +4,9 @@ clear; close all; clc;
 %done
 
 %constants
+
+% Start to switch values of circuit components to the voltage circuit
+% values instead of the flux circuit values.
 Amplitude = 600;
 Frequency = 19000;%double(mdsvalue('\sihi_freq'));
 RunTime = .004;
@@ -20,7 +23,7 @@ R1 = .0025; %Ohm
 R2 = .005; % Ohm
 R3 = .005;% Ohm
 Lp = L2/5; %Henry
-Mp = L2/5; % Henry
+Mp = .75*sqrt(L2*Lp); % Henry order 150 nH and a resistive load order 30 mOhms
 Rp = R2;
 Vp = 0;
 size_A = 13; %dimension of A matrix

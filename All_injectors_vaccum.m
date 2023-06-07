@@ -2,7 +2,7 @@
 clear; close all; clc;
 % Initialize data and plot to make sure everything is gucci
 % declare time and voltage for our data
-mdsopen('hitsiu', 220802016);
+% 
 Amplitude = 600;
 Amplitude1 = 600;
 Frequency = 19000;%double(mdsvalue('\sihi_freq'));
@@ -190,9 +190,9 @@ voltage = ans.simout.signals.values;
 [nada, loc_nada] = findpeaks(-(abs(voltage))); % nada
 
 [newVoltages] = toSquare(voltage, Amplitude, SampleTime, time);
-[newVoltageShift1] = phaseShift(newVoltages, PhaseAngle1, loc_nada);
-[newVoltageShift2] = phaseShift(newVoltages, PhaseAngle2, loc_nada);
-[newVoltageShift3] = phaseShift(newVoltages, PhaseAngle3, loc_nada);
+[newVoltageShift1] = phaseShift(newVoltages, PhaseAngle1);
+[newVoltageShift2] = phaseShift(newVoltages, PhaseAngle2);
+[newVoltageShift3] = phaseShift(newVoltages, PhaseAngle3);
 injector1 = zeros(size(newVoltages));
 %Kalman filter bitch
 [kalmf, L, P] = kalman(sys_d, Q, R, 0);
@@ -348,6 +348,21 @@ legend("True L1 Current with Noise", "Denoised L1 Current from KF", "Location", 
 % %Functions below this line
 
 
+%% Create State Derivatives for testing stuff in SINDy notebook
 
+% L1_Voltage_Flux_1 = voltage - C_Voltage_Flux_1;
+% L1_Voltage_Flux_2 = voltage - C_Voltage_Flux_2;
+% L1_Voltage_Flux_3 = voltage - C_Voltage_Flux_3;
+% L1_Voltage_Flux_4 = voltage - C_Voltage_Flux_4;
+% 
+% Cap_Current_Flux_1 = L1_Current_Flux_1 - L2_Current_Flux_1;
+% Cap_Current_Flux_2 = L1_Current_Flux_2 - L2_Current_Flux_2;
+% Cap_Current_Flux_3 = L1_Current_Flux_3 - L2_Current_Flux_3;
+% Cap_Current_Flux_4 = L1_Current_Flux_4 - L2_Current_Flux_4;
+
+data = [time, voltage,voltage,voltage,voltage,L1_Current_Flux_1,C_Voltage_Flux_1,L2_Current_Flux_1,...
+    L1_Current_Flux_2,C_Voltage_Flux_2,L2_Current_Flux_2,...
+    L1_Current_Flux_3,C_Voltage_Flux_3,L2_Current_Flux_3,...
+    L1_Current_Flux_4,C_Voltage_Flux_4,L2_Current_Flux_4];
 
 
