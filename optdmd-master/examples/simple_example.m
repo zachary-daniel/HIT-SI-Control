@@ -1,3 +1,4 @@
+clear;close all;clc;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 % Simple example --- how to call code

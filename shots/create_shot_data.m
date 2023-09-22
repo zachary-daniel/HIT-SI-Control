@@ -52,5 +52,5 @@ v_L1_4 = v_spa_4 - v_cap_4;
 data = [time,v_spa_1,v_spa_2,v_spa_3,v_spa_4,...
     i_L1_1,v_cap_1,i_fcoil_1,v_L1_1,i_cap_1,v_fcoil_1,i_L1_2,v_cap_2,i_fcoil_2,v_L1_2,i_cap_2,v_fcoil_2,...
     i_L1_3,v_cap_3,i_fcoil_3,v_L1_3,i_cap_3,v_fcoil_3,i_L1_4,v_cap_4,i_fcoil_4,v_L1_4,i_cap_4,v_fcoil_4,i_tor];
-save(shot_num)
+save(strcat(shot_num,'_flux'))
 end

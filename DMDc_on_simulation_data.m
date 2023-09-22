@@ -1,10 +1,7 @@
 clear; close all; clc;
-%load("All_injectors_vaccum_full_workspace.mat")
-%load("DMDc_on_old_shot.mat")
 load("All_injectors_vaccum_full_workspace.mat")
-load('Look_at_shot_with_plasma.mat')
-mdsopen('hitsiu', 220816009) 
-L2_from_shot = mdsvalue('\i_fcoil_1');
+%load("DMDc_on_old_shot.mat")
+
 % sys_dmd_on_shot_c = sys_dmd;
 % Let's first check that DMDc can somewhat accurately recreate the A and B
 % matrices that come out of the state space model I derived
@@ -124,9 +121,9 @@ syskf = ss(Ad-L*Cd, [Bd L],eye(12), 0*[Bd L], dT);
 [y,t] = lsim(sys_d, [newVoltages newVoltages newVoltages newVoltages], time);
 [yk, tk] = lsim(syskf, [newVoltages newVoltages newVoltages newVoltages, y], time);
 
-[newVoltageShift1] = phaseShift(newVoltages, PhaseAngle1, loc_nada);
-[newVoltageShift2] = phaseShift(newVoltages, PhaseAngle2, loc_nada);
-[newVoltageShift3] = phaseShift(newVoltages, PhaseAngle3, loc_nada);
+[newVoltageShift1] = phaseShift(newVoltages, PhaseAngle1);
+[newVoltageShift2] = phaseShift(newVoltages, PhaseAngle2);
+[newVoltageShift3] = phaseShift(newVoltages, PhaseAngle3);
 
 %Replace data from simulink with data from Kalman filter. If this is
 %commented out, data from Simulink is going to be used instead
@@ -199,6 +196,13 @@ U2tilde_t_f = Utilde_t_f(13:16,:);
 Abar_t_f = X2*Vtilde_t_f*pinv(Stilde_t_f)*U1tilde_t_f';
 Bbar_t_f = X2*Vtilde_t_f*pinv(Stilde_t_f)*U2tilde_t_f';
 
+sys_dmdc = ss(Abar_t_f,Bbar_t_f,Cd,Dd,dT);
+%% What if we know our B matrix and just want to solve for A?
+
+
+
+%%
+
 %Let's try fbDMD
 %The theory is as follows: Going from X -> X2 yields a matrix A right? But
 %if we go from X2 -> X we get a matrix let's call G. G^-1 = A if my data is
@@ -228,7 +232,11 @@ Bbar_t_b = X*Vtilde_t_b*pinv(Stilde_t_b)*U2tilde_t_b';
 Abar_t = sqrt(Abar_t_b * pinv(Abar_t_f));
 Bbar_t = sqrt(Bbar_t_b*pinv(Bbar_t_f));
 
-sys_dmd_t = ss(Abar_t_f, Bbar_t_f, Cd, Dd, dT);
+
+
+sys_dmd_t = ss(Abar_t_f, Bbar_t_f, Cd, Dd,dT);
+
+voltage_inputs = [newVoltages, newVoltageShift1, newVoltageShift2, newVoltageShift3];
 %% Alright let's see if we can do some statistical bagging
 
 %What we want to do is to take random subsets of the snapshot data, and

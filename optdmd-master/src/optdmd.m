@@ -1,4 +1,4 @@
-function [w,e,b,varargout] = optdmd(X,t,r,imode,varargin)
+function [w,e,b,converged,varargout] = optdmd(X,t,r,imode,varargin)
 %OPTDMD Wrapper of VARPRO2 for computing the optimized DMD of data
 %
 %   [w,e,b,varargout] = optdmd(X,t,r,imode,varargin)
@@ -150,7 +150,7 @@ if (imode == 2)
     [~,n] = size(u);
     ia = r;
     is = r;
-    [w,e,~,~,~,~] = varpro2(transpose(u'*X),t, ...
+    [w,e,~,~,converged,~] = varpro2(transpose(u'*X),t, ...
             @varpro2expfun,@varpro2dexpfun,m,n,is,ia,alpha_init, ...
             opts,copts,gamma,proxfun);
     

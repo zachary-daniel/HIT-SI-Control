@@ -141,6 +141,9 @@ D = zeros( size(C,1), size(B,2) );
 states = {'x1', 'x2', 'x3', 'x1b', 'x2b', 'x3b', 'x1c', 'x2c', 'x3c', 'x1d', 'x2d', 'x3d'};
 inputs = {'v(t)'}; 
 outputs = {'x3'};
+
+BOP_A_matrix = load('BOP_A_matrix.mat').matrix;
+
 %%
 %continuous time system
 sysc = ss(A,B,C,D, "statename", states,"inputname", inputs, "outputname", outputs);
@@ -148,7 +151,10 @@ A = sysc.A;
 B = sysc.B;
 C = sysc.C;
 D = sysc.D;
+%Adding the BOP A matrix from DMD
+BOP_sys = ss(BOP_A_matrix,B,C,D);
 
+BOP_sysd = c2d(BOP_sys,dT,'zoh');
 %Discrete Time System
 sys_d_vacuum = c2d(sysc, dT, 'zoh');
 
@@ -167,6 +173,7 @@ R = diag(1*ones(1,size(B,2))); % Noise covariance
 
 syskf_vacuum = ss(Ad-L*Cd, [Bd L],eye(12), 0*[Bd L],dT);
 
+[bop_kalmf,bop_L,bop,P] = kalman(BOP_sys,Q,R,0);
 
 
 backwards_vals = (Amplitude*sin(time*Frequency*2*pi));

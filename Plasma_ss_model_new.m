@@ -144,7 +144,7 @@ C = [0,0,1,0,0,0,0,0,0,0,0,0,0;
 D = zeros(size(C,1),size(B,2));
 
 %Create system
-sysc= ss(A,B,C,D);
+sysc= ss(A,B,C,D); 
 
 sys_d_plasma = c2d(sysc,dT,'zoh');
 
@@ -169,7 +169,7 @@ plasma_voltage = Vp*ones(size(time))';
 
 inputs = [newVoltage, newVoltage, newVoltage, newVoltage];
 
-out_plasma = lsim(sys_d_plasma,inputs,time);
+[out_plasma,t,x] = lsim(sys_d_plasma,inputs,time);
 
 out_vacuum = lsim(sys_d_vacuum,inputs,time);
 

@@ -17,7 +17,7 @@ R1 = .0025; %Ohm
 R2 = .005; % Ohm
 R3 = .005;% Ohm
 dT = 1e-7;
-NoisePower = 0;
+NoisePower = .1;
 PhaseAngle1 = 0;
 PhaseAngle2 = 0;
 PhaseAngle3 = 0;
@@ -259,10 +259,11 @@ title("Noisey Output vs. Kalman Filter Output for L2 Current (Flux 1)")
 legend("True L2 Current with Noise", "Denoised L2 Current from KF", "Location", "northwest")
 
 
-
+%%
 
 % Plot C vs. C approx
 figure()
+
 plot(time, C_Voltage_Flux_1,  "LineWidth", .5)
 hold on
 plot(time, C_Voltage_Approx_Flux_1,'r--', "Linewidth",2)
@@ -270,10 +271,12 @@ C_Voltage_No_Noise = ans.TrueCVoltage.signals.values; % Cap voltage with no nois
 plot(time, C_Voltage_No_Noise, 'g:', 'Linewidth', 2)
 xlabel("Time")
 ylabel("Voltage")
-title("Noisey Output vs. Kalman Filter Output for C Voltage (Flux 1)")
-legend("Cap Voltage with Noise", "Denoised Cap Voltage from KF", 'Cap Voltage no Noise', "Location", "northwest")
+title("Noisey Output vs. Kalman Filter Output for C Voltage (Flux 1)", "FontSize", 16)
+
+legend("Cap Voltage with Noise", "Denoised Cap Voltage from KF", 'Cap Voltage no Noise', "Location", "northwest", 'FontSize',12 )
 
 
+%%
 
 % Plot L1 Current vs. L1 Approx
 figure()
@@ -304,7 +307,7 @@ xlabel("Time")
 ylabel("Voltage")
 title("Noisey Output vs. Kalman Filter Output for C Voltage (Flux 2)")
 legend("True C Voltage with Noise", "Denoised C Voltage from KF", "Location", "northwest")
-
+%%
 % L1 Current Flux 2
 figure()
 plot(time, L1_Current_Flux_2, "LineWidth", 2)
@@ -364,5 +367,6 @@ data = [time, voltage,voltage,voltage,voltage,L1_Current_Flux_1,C_Voltage_Flux_1
     L1_Current_Flux_2,C_Voltage_Flux_2,L2_Current_Flux_2,...
     L1_Current_Flux_3,C_Voltage_Flux_3,L2_Current_Flux_3,...
     L1_Current_Flux_4,C_Voltage_Flux_4,L2_Current_Flux_4];
+
 
 
