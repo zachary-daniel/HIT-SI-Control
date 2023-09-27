@@ -23,7 +23,7 @@ copts = varpro_lsqlinopts('lbc',lbc,'ubc',ubc);
 %%
 inputs = [v_spa_1,v_spa_2,v_spa_3,v_spa_4];
 
-L1 = (8.0141e-7); %Henry
+L1 = (8.0141e-7); %Henry. Could this matrix change when we enter plasma?
 B =                 [1/L1,0,0,0;
                      0,0,0,0;
                      0,0,0,0;
@@ -120,8 +120,11 @@ end
 % end
 
 %% Let's try BOP-DMD with some regular averaging now instead of the clustering
+train_norm = train./(max(train'))';
 
-[w_avg,e_avg,b_avg,atilde_avg,flag] = bop_dmd_func_avg(10,train,.63,5,imode,time(1773:end),40);
+
+%%
+[w_avg,e_avg,b_avg,atilde_avg,flag] = bop_dmd_func_avg(20,train,.63,4,imode,time(1773:end),40);
 
 figure()
 scatter(real(e_avg),imag(e_avg));
@@ -139,6 +142,82 @@ for k = 1:12
     plot(time(252:end),xout_bop_avg(:,k))
     hold on
     plot(time(252:end),flux_trajectory_arr(k,252:end))
-    legend('OPT-DMD','Test')
+    legend('BOP-DMD','Test')
     
 end
+
+%% Fuck around with normalized data
+% [w,e,b,converged,atilde,u,afull] = optdmd(train_norm,time(1773:end),r,imode,[],[],[],copts);
+% 
+% sys_bop_norm = ss(afull,B,C,D);
+% [~,~,xout_bop_norm] = lsim(sys_bop_avg,inputs(1773:end,:),time(1773:end));
+% 
+% figure()
+% for k = 1:12
+%     subplot(4,3,k);
+%     plot(time(1773:end),xout_bop_norm(:,k))
+%     hold on
+%     plot(time(1773:end),flux_trajectory_arr(k,1773:end))
+%     legend('OPT-Norm-Data','Test')
+%     
+% end
+%% I'm going to take this model with the slightly different B matrix and try it on a new plasma shot
+load('shots\220816008_flux.mat');
+
+%% Load in second shot
+flux_trajectory_arr_2= [i_L1_1,v_cap_1,i_fcoil_1,i_L1_2,v_cap_2,i_fcoil_2,i_L1_3,v_cap_3,i_fcoil_3,i_L1_4,v_cap_4,i_fcoil_4,i_tor];
+inputs_2 = [v_spa_1,v_spa_2,v_spa_3,v_spa_4];
+time = time';
+flux_trajectory_arr_2 = flux_trajectory_arr_2';
+
+train = flux_trajectory_arr_2(1:13,1773:end);
+%% I'm going to take the BOP model from one shot and apply it to another shot. I'm also going to see if this changed value 
+% of L1 which goes into the B matrix improves performance across multiple
+% shots
+
+
+figure()
+for k = 1:12
+    subplot(4,3,k);
+    plot(time(252:end),flux_trajectory_arr(k,252:end))
+    hold on
+    plot(time(252:end),flux_trajectory_arr_2(k,252:end))
+    legend('220816009','220816008')
+    
+end
+
+figure()
+for k = 1:4
+    subplot(4,1,k)
+    plot(time(252:end),inputs(252:end,k))
+    hold on
+    plot(time(252:end),inputs_2(252:end,k))
+    legend('220816009','220816008')
+end
+%% OK so this B-matrix changing around is valid. Makes performance better across different shots from same day
+[~,~,xout_bop_new_shot] = lsim(sys_bop_avg,inputs_2(252:end,:),time(252:end));
+figure()
+for k = 1:12
+    subplot(4,3,k);
+    plot(time(252:end),xout_bop_new_shot(:,k))
+    hold on
+    plot(time(252:end),flux_trajectory_arr_2(k,252:end))
+    legend('BOP-DMD','New Shot')
+    
+end
+%% Compare BOP-DMD to training data
+% [~,~,xout_train_fit] = lsim(sys_bop_avg,inputs(1773:end,:),time(1773:end));
+% 
+% figure()
+% for k = 1:12
+%     subplot(4,3,k);
+%     plot(time(1773:end),xout_train_fit(:,k))
+%     hold on
+%     plot(time(1773:end),flux_trajectory_arr(k,1773:end))
+%     legend('BOP-DMD','Training Data')
+%     
+% end
+
+%% Maybe my B matrix is wrong for when a plasma is present. Let's compute one analytically from the data
+% t_vec = time.*ones(13,length(time));
+% beh = ( train + 1 - expm(sys_bop_avg.A.*time(:,1773:end)) - expm(sys_bop_avg.A.*t(:,1773:end))*train(:,1) )/inputs(1773,1);

@@ -83,7 +83,7 @@ while k < num_trials
 end
 
 
-w_avg = w_total/(num_trials);
+w_avg = w_total/num_trials;
 
 
 e_avg = median(e_med_real) + 1i*(median(e_med_imag));
