@@ -24,11 +24,11 @@ R2 = .005; % Ohm
 R3 = .005;% Ohm
 Lp = L2/5; %Henry
 Mp = .5*sqrt(L2*Lp); % Henry order 150 nH and a resistive load order 30 mOhms
-Rp = R2;
+Rp = R2*1;
 Vp = 0;
 size_A = 13; %dimension of A matrix
 num_inputs = 4;
-
+time = Start:dT:RunTime;
 NoisePower = 0;
 %LQR cost matrices
 accuracy_penalty = 10000;
@@ -100,7 +100,7 @@ state_coeff = [-(R1+R2)/L1,-1/L1,R2/L1,0,0,0,0,0,0,0,0,0,0;
                     0, 0, 0, 0, 0, 0, 0, 0, 0, 1/Cap, 0, -1/Cap,0;
                     0,0,0,0,0,0,0,0,0,-R2,-1,R2+R3,0;
                     0,0,0,0,0,0,0,0,0,0,0,0,Rp];
-
+%%
 %coeff in front of state derivatives x_dot
 state_derivative_coeff = [1,0,0,0,0,0,0,0,0,0,0,0,0;
                           0,1,0,0,0,0,0,0,0,0,0,0,0;
@@ -110,17 +110,18 @@ state_derivative_coeff = [1,0,0,0,0,0,0,0,0,0,0,0,0;
                           0,0,-M,0,0,-L2,0,0,-Mw,0,0,-M,-Mp;
                           0,0,0,0,0,0,1,0,0,0,0,0,0;
                           0,0,0,0,0,0,0,1,0,0,0,0,0;
-                          0,0,-M,0,0,-Mw,0,0,-L2,0,0,-M, -Mp;
+                          0,0,-M,0,0,-Mw,0,0,-L2,0,0,-M,-Mp;
                           0,0,0,0,0,0,0,0,0,1,0,0,0;
                           0,0,0,0,0,0,0,0,0,0,1,0,0;
                           0,0,-Mw,0,0,-M,0,0,-M,0,0,-L2,-Mp;
                           0,0,-Mp,0,0,-Mp,0,0,-Mp,0,0,-Mp,-Lp];
 
+%%
 %compute A matrix
 A = (state_derivative_coeff) \ state_coeff;
 
 %B matrix
-
+%%
 %coeff in front of inputs for state vector
 B =                 [1/L1,0,0,0;
                      0,0,0,0;
@@ -145,22 +146,8 @@ D = zeros(size(C,1),size(B,2));
 
 %Create system
 sysc= ss(A,B,C,D); 
+%%
 
-sys_d_plasma = c2d(sysc,dT,'zoh');
-
-Ad = sys_d_plasma.A;
-Bd = sys_d_plasma.B;
-Cd = sys_d_plasma.C;
-Dd = sys_d_plasma.D;
-
-%observable
-observable = size(A,1) == rank(obsv(Ad,Cd));
-
-%controllable
-
-controllable = size(A,1) == rank(ctrb(Ad,Bd));
-
-time = Start:dT:RunTime;
 voltage = Amplitude*sin(2*pi*Frequency*time);
 
 newVoltage = toSquare(voltage, Amplitude,SampleTime,time);
@@ -168,67 +155,12 @@ newVoltage = toSquare(voltage, Amplitude,SampleTime,time);
 plasma_voltage = Vp*ones(size(time))';
 
 inputs = [newVoltage, newVoltage, newVoltage, newVoltage];
-
-[out_plasma,t,x] = lsim(sys_d_plasma,inputs,time);
-
-out_vacuum = lsim(sys_d_vacuum,inputs,time);
-
-%Build Kalman Filter
-[kalmf, L, P] = kalman(sys_d_plasma, Q, R, 0);
-
-syskf_plasma = ss(Ad-L*Cd, [Bd L], eye(size_A), 0*[Bd L], dT);
-
-%Build LQR controller
-K_plasma = lqr(sys_d_plasma,Q_cost,R_cost);
-
-
-
-desired1.signals.values = desired_L2_wave;
-desired1.time = time;
-
-desired2.signals.values = phaseShift(desired_L2_wave,90);
-desired2.time = time;
-
-
-desired3.signals.values = phaseShift(desired_L2_wave,180);
-desired3.time = time;
-
-desired4.signals.values = phaseShift(desired_L2_wave,270);
-desired4.time = time;
-
-time_plasma = (0:dT:(RunTime-FormationTime));
-
-simin.signals.values = desired_L2_wave(1:length(time_plasma),:);
-simin.time = time_plasma;
-
-dc_plasma_voltage.signals.values = Vp*(0:dT:(RunTime-FormationTime))';
-dc_plasma_voltage.time = time_plasma;
-
-%% Simulate Vacuum Portion
-sim('All_injectors_LQG_just_ss_model.slx', 'StopTime', 'FormationTime')
-init_vals_plasma = ans.KalmanFilter.signals.values(end,:);
-
-
-%% Simulate Plasma
-sim('All_injectors_LQG_plasma_ss_model.slx', 'StopTime', 'FormationTime')
-%%
-% 
-% figure()
-% plot(time,out(:,1)) %L2 flux 1
-% title("L2 Current Flux 1")
-% xlabel('Time (s)')
-% ylabel('Current (Amps)')
-% 
-% figure()
-% plot(time,out(:,5)) %Plasma current
-% title('Plasma Current')
-% xlabel('Time (s)')
-% ylabel('Current (Amps)')
-
 %%
 [~,~,x] = lsim(sysc,[newVoltage, newVoltage,newVoltage,newVoltage],time);
-
+figure()
 for k = 1:12
     subplot(4,3,k)
     plot(time,x(:,k))
 end
+figure()
+plot(x(:,13))
