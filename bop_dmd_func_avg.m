@@ -1,23 +1,23 @@
 
-function [w_avg,e_avg,b_avg,atilde,flag] = bop_dmd_func_avg(num_trials, data,trial_size,rank,imode,train_time,maxiter) 
-opts = varpro_opts('maxiter', maxiter); %set number of iterations for each run of opt-dmd
-data_rows = size(data,1); %number of rows in data. Data should be passed in  as states x samples
-w_total = zeros(data_rows,rank); %pre-allocate the space for the eigenvalue  array
-e_med_real = zeros(num_trials,rank);
-e_med_imag = zeros(num_trials,rank);
+function [w_avg,e_avg,b_avg,atilde,flag] = bop_dmd_func_avg(num_trials, data,trial_size,rank,imode,train_time,maxiter,tol) 
+opts = varpro_opts('maxiter', maxiter,'tol',tol); %set number of iterations for each run of opt-dmd
+data_rows = size(data,1); %number of rows in data. Data should be passed in as states x samples
+w_total = zeros(data_rows,rank); %pre-allocate the space for the eigenvector  array
+e_med_real = zeros(num_trials,rank); %pre-allocate space for real part of eigenvalue array
+e_med_imag = zeros(num_trials,rank);%pre-allocate space for imag part of eigenvalue array
 
-b_total = 0;
+b_total = 0; %weights for opt-dmd
 batch_size = trial_size; %percentage of data that's used for each run 
 shape = size(data);
-flag = 'working';
+flag = 'working'; %flag used to indicate if an unstable eigenvalue gets through
 num_points = int16(batch_size.*length(data)); %get the number of points that will be contained in each trial
-k = 0;
+k = 0; %index used to indicate what trial the bagging loop is on
 all_indices = length(data); %length of the data vector
 while k < num_trials
-    k = k + 1;
+    k = k + 1; 
     subset_indices = sort( randperm(all_indices,num_points) );%random selection of points from 1 to length of data that we then sort from low to high
     data_subset = zeros([shape(1),num_points]); %pre-allocate an array that's the size of the number of points that will be use in each trial
-    time_subset = zeros(size(num_points));
+    time_subset = zeros(size(num_points)); %corresponding time points for randomly selected data points
     for v = 1:num_points %for loop to take a random point from our total data matrix and place it into the data_subset
         point = subset_indices(v); %index that's in the random array
         data_subset(:,v) = data(:,point);
@@ -83,10 +83,10 @@ while k < num_trials
 end
 
 
-w_avg = w_total/num_trials;
+w_avg = w_total/(2*num_trials); %average  eigenvectors
 
 
-e_avg = median(e_med_real) + 1i*(median(e_med_imag));
+e_avg = median(e_med_real) + 1i*(median(e_med_imag)); %add up real and imag parts
 b_avg = b_total/num_trials;
-atilde = w_avg*diag(e_avg)*pinv(w_avg);
+atilde = (w_avg)*diag(e_avg)*(pinv(w_avg));
 end
