@@ -85,7 +85,7 @@ else
 end
 
 if (nargin < 6 || isempty(varargin{2}))
-    
+    disp('I entered this if statment')
     % use projected trapezoidal rule approximation
     % to eigenvalues as initial guess
     
@@ -183,7 +183,7 @@ else
     ia = r;
     n = r;
     
-    [w,e,~,~,~,~] = varpro2(transpose(X),t, ...
+    [w,e,~,~,converged,~] = varpro2(transpose(X),t, ...
         @varpro2expfun,@varpro2dexpfun,m,n,is,ia,alpha_init, ...
         opts,copts,gamma,proxfun);
     

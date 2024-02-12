@@ -1,4 +1,4 @@
-%% Define all the constants 
+ %% Define all the constants 
 clear all; close all; clc;
 Ls = 2.47*1e-6;
 Rs = 5*1e-3;

@@ -9,7 +9,7 @@ clear; close all; clc;
 % values instead of the flux circuit values.
 Amplitude = 600;
 Frequency = 19000;%double(mdsvalue('\sihi_freq'));
-RunTime = .004;
+RunTime = .002;
 SampleTime = 1e-7;
 dT = SampleTime;
 Start = 0;
@@ -29,28 +29,28 @@ Vp = 0;
 size_A = 13; %dimension of A matrix
 num_inputs = 4;
 
-NoisePower = 0;
+NoisePower = 0.01;
 %LQR cost matrices
-accuracy_penalty = 10000;
+accuracy_penalty = 1000;
 Q_cost = diag(ones(size_A,1));
 Q_cost(3,3) = accuracy_penalty;
 Q_cost(6,6) = accuracy_penalty;
 Q_cost(9,9) = accuracy_penalty;
 Q_cost(12,12) = accuracy_penalty;
-R_cost = .01;
-
+R_cost = 1;
+time = Start:dT:RunTime;
 %Kalman Filter Cost matrices
-Q = diag(1*ones(1,num_inputs)); % disturbance covariance
-R = diag(1*ones(1,num_inputs)); % Noise covariance
+
 
 %Desired wave for LQR
 s = load('desired_L2_wave.mat');
-desired_L2_wave = s.L2_Current_Flux_1;
+desired_L2_wave = s.L2_Current_Flux_1./2.5;
 
 
 sys_d_vacuum = load("sys_d_vacuum.mat").sys_d; %discrete time vacuum circuit model
 syskf_vacuum = load('syskf_vacuum.mat').syskf_vacuum; %discrete timekalman filter for vacuum circuit
 K_vacuum = load('lqr_gain_vacuum.mat').K_vacuum; %LQR gain matrix for vacuum model;
+
 
 % %augment A,B,C,D matrices for vacuum to include an extra state for plasma
 % A_vacuum = sys_d_vacuum.A;
@@ -160,7 +160,7 @@ observable = size(A,1) == rank(obsv(Ad,Cd));
 
 controllable = size(A,1) == rank(ctrb(Ad,Bd));
 
-time = Start:dT:RunTime;
+
 voltage = Amplitude*sin(2*pi*Frequency*time);
 
 newVoltage = toSquare(voltage, Amplitude,SampleTime,time);
@@ -172,6 +172,11 @@ inputs = [newVoltage, newVoltage, newVoltage, newVoltage];
 [out_plasma,t,x] = lsim(sys_d_plasma,inputs,time);
 
 out_vacuum = lsim(sys_d_vacuum,inputs,time);
+
+Q = 0; % disturbance covariance
+R = diag(.001*ones(1,size(B,2))); % Noise covariance
+
+
 
 %Build Kalman Filter
 [kalmf, L, P] = kalman(sys_d_plasma, Q, R, 0);
@@ -186,15 +191,21 @@ K_plasma = lqr(sys_d_plasma,Q_cost,R_cost);
 desired1.signals.values = desired_L2_wave;
 desired1.time = time;
 
-desired2.signals.values = phaseShift(desired_L2_wave,90);
+desired2.signals.values = phaseShift(desired_L2_wave,0);
 desired2.time = time;
 
 
-desired3.signals.values = phaseShift(desired_L2_wave,180);
+desired3.signals.values = phaseShift(desired_L2_wave,0);
 desired3.time = time;
 
-desired4.signals.values = phaseShift(desired_L2_wave,270);
+desired4.signals.values = phaseShift(desired_L2_wave,0);
 desired4.time = time;
+
+
+desired1.signals.values = desired1.signals.values(1:length(time),:);
+desired2.signals.values = desired2.signals.values(1:length(time),:);
+desired3.signals.values = desired3.signals.values(1:length(time),:);
+desired4.signals.values = desired4.signals.values(1:length(time),:);
 
 time_plasma = (0:dT:(RunTime-FormationTime));
 
@@ -206,9 +217,9 @@ dc_plasma_voltage.time = time_plasma;
 
 %% Simulate Vacuum Portion
 sim('All_injectors_LQG_just_ss_model.slx', 'StopTime', 'FormationTime')
-init_vals_plasma = ans.KalmanFilter.signals.values(end,:);
+% init_vals_plasma = 0;%ans.KalmanFilter.signals.values(end,:);
 
-
+% sim_time = (0:dT:)
 %% Simulate Plasma
 sim('All_injectors_LQG_plasma_ss_model.slx', 'StopTime', 'FormationTime')
 
@@ -226,11 +237,22 @@ sim('All_injectors_LQG_plasma_ss_model.slx', 'StopTime', 'FormationTime')
 % ylabel('Current (Amps)')
 
 %%
-[~,~,x] = lsim(sysc,inputs,time);
+L2_current_flux_1 = ans.StateSpaceModel.signals.values(:,1);
+desired_L2_flux_1 = desired1.signals.values;
+LQR_outputs = ans.LQRInputs.signals.values;
+
 figure()
-for k = 1:12
-    subplot(4,3,k)
-    plot(time,x(:,k))
-end
+plot(time,ans.StateSpaceModel.signals.values(:,1))
+hold on
+plot(time,desired1.signals.values)
+legend('State space output','Desired current')
+
 figure()
-plot(x(:,13))
+plot(time,ans.LQRInputs.signals.values(:,:))
+legend('Inputs from LQR')
+
+figure()
+plot(time,ans.StateSpaceModel.signals.values(:,3))
+hold on
+plot(time,ans.KalmanFilter.signals.values(:,3))
+legend('L2_1','Kalman filter')

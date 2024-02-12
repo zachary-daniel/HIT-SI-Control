@@ -1,3 +1,3 @@
 clear;close all;clc;
-[data,shot] = create_plasma_shot_data('220816008.hdf5');
-[data_flux,shot_flux] = create_shot_data('220816008.hdf5');
+[data,shot] = create_shot_func('221201010.hdf5',true,true,'high_itor_plasma_shots/');
+load('high_itor_plasma_shots\matlab data\221129011_plasma_flux.mat');
