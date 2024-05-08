@@ -85,7 +85,7 @@ else
 end
 
 if (nargin < 6 || isempty(varargin{2}))
-    disp('I entered this if statment')
+
     % use projected trapezoidal rule approximation
     % to eigenvalues as initial guess
     

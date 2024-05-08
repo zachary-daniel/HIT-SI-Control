@@ -73,31 +73,19 @@ imode = 2;
 train = xout_vacuum(30001:end,:)'; %get training data. Has to be states X snapshots
 shape = size(train(:,1));
 
-train_no_control = (xout_vacuum - (B_12*voltages')')';
-
 lbc = [-Inf*ones(r,1); -Inf*ones(r,1)];
 ubc = [zeros(r,1); Inf*ones(r,1)];
 
 copts = varpro_lsqlinopts('lbc',lbc,'ubc',ubc);
 
-[w,e,b,converged,atilde,u,afull] = optdmd(train,time(30001:end),r,imode,[],[],[],copts); %Fit to vacuum sim data
-%%
-[~,~,~,converged,~,~,afull_no_control] = optdmd(train_no_control(:,20000:30000),time(20000:30000),r,imode,[],[],[],copts); %Fit to vacuum sim data with control subtracted off
+[w,e,b,converged,atilde,u,afull_vacuum] = optdmd(train,time(30001:end),r,imode,[],[],[],copts); %Fit to vacuum sim data
 
-sys_no_control = ss(afull_no_control,B_12,C_12,D);
 %%
 
+sys_opt = ss(afull_vacuum,B_12,C_12,D);
 
-% [y,t,xout_plasma] = lsim(sys_plasma,inputs(252:end,:),time(252:end));
-% r= 12
-% [w,e,b,atilde,u,afull] = optdmd(train,time(1773:end),r,imode);
-if shape(1) == 12
-    sys_opt = ss(afull,B_12,C_12,D);
-else
-    sys_opt = ss(afull,B,C,D);
-end
 [y,t,xout_test] = lsim(sys_opt,voltages,time); %get test data. Just simulate the whole shot that it was trained on. 
-[~,~,xout_no_control] = lsim(sys_no_control,voltages,time);
+
 
 %%
 figure() %plot DMD model vs. test data
@@ -109,27 +97,15 @@ for k = 1:12
     plot(time,xout_vacuum(:,k))
     legend('DMD','Vacuum Test')
 end
-%%
-figure() %plot DMD model vs. test data
-title('OPT-DMD trained on data with control subtracted off')
-for k = 1:12
-    subplot(4,3,k);
-    plot(time,xout_no_control(:,k),"LineWidth", 2)
-    hold on
-    plot(time,xout_vacuum(:,k))
-    legend('DMD no control','Vacuum Test')
-end
+
 %%
 opt_vacuum_eigs = eigs(sys_opt.A);
-opt_no_control_eigs = eigs(sys_no_control.A);
 figure()
 
 scatter(real(e_vacuum),imag(e_vacuum),100)
 hold on
 scatter(real(opt_vacuum_eigs),imag(opt_vacuum_eigs),'d')
-hold on
-scatter(real(opt_no_control_eigs),imag(opt_no_control_eigs));
-legend('Model','DMD','Control subtracted off')
+legend('Model','DMD')
 %% Now we do the same for the plasma data
 r = 13; %number of modes. Full rank in this case
 imode = 2;

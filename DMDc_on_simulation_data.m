@@ -302,7 +302,7 @@ sys_temp = ss(A_avg, B_avg, Cd, Dd, dT);
 % X2_sub = X2(:, 1:2:length(X2));
 % Upsilon_sub = Upsilon(:, 1:2:length(Upsilon));
 % Omega_sub = [X_sub Upsilon_sub];
-sys_eek = ss(A_tilde, B_tilde, Cd, Dd, dT);
+% sys_eek = ss(A_tilde, B_tilde, Cd, Dd, dT);
 
 y = lsim(sys_temp, [newVoltages newVoltages newVoltages newVoltages], time);
 
