@@ -23,7 +23,7 @@ R1 = .0025; %Ohm
 R2 = .005; % Ohm
 R3 = .005;% Ohm
 Lp = L2; %Henry
-Mp = .1*sqrt(L2*Lp); % Henry order 150 nH and a resistive load order 30 mOhms
+Mp = .001*sqrt(L2*Lp); % Henry order 150 nH and a resistive load order 30 mOhms
 Rp = R2;
 Vp = 0;
 size_A = 13; %dimension of A matrix
@@ -31,7 +31,7 @@ num_inputs = 4;
 
 NoisePower = .0001;
 %LQR cost matrices
-accuracy_penalty = 1;
+accuracy_penalty = 10000;
 Q_cost = diag(ones(size_A,1));
 Q_cost(3,3) = accuracy_penalty;
 Q_cost(6,6) = accuracy_penalty;
@@ -194,14 +194,17 @@ K_plasma = lqr(sys_d_plasma,Q_cost,R_cost);
 desired1.signals.values = desired_L2_wave;
 desired1.time = time;
 
-desired2.signals.values = phaseShift(desired_L2_wave,90);
+% desired2.signals.values = phaseShift(desired_L2_wave,90);
+desired2.signals.values = desired_L2_wave;
 desired2.time = time;
 
 
-desired3.signals.values = phaseShift(desired_L2_wave,180);
+% desired3.signals.values = phaseShift(desired_L2_wave,180);
+desired3.signals.values = desired_L2_wave;
 desired3.time = time;
 
-desired4.signals.values = phaseShift(desired_L2_wave,270);
+% desired4.signals.values = phaseShift(desired_L2_wave,270);
+desired4.signals.values = desired_L2_wave;
 desired4.time = time;
 
 time_plasma = (0:dT:(RunTime-FormationTime));

@@ -16,7 +16,7 @@ R2 = .005; % Ohm
 R3 = .005;% Ohm
 dT = 1e-7;
 
-NoisePower = .01;
+NoisePower = 0;
 PhaseAngle1 = 0;
 PhaseAngle2 = 0;
 PhaseAngle3 = 0;

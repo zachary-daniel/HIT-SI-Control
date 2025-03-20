@@ -1,6 +1,6 @@
 from scipy.signal import lsim, dlsim
 
-def compare_operators(operator_list,sys_matrices,input,time,sample_time = None):
+def compare_operators(operator_list,sys_matrices,input,time,sample_time = None,initial_condition = None):
     """
     operator_list: list of the different matrices that the user would like to compare
     sys_matrices: tuple of B,C,D matrix for each simulation
@@ -19,13 +19,14 @@ def compare_operators(operator_list,sys_matrices,input,time,sample_time = None):
         for operator in operator_list:
 
             sysd = (operator,B,C,D,sample_time)
-            trajectory = dlsim(sysd,input.T,time)[-1]
+            trajectory = dlsim(sysd,input.T,time,initial_condition)[-1]
             trajectory_list.append(trajectory)
         return trajectory_list
     else:
         for operator in operator_list:
             sysc = (operator,B,C,D)
-            trajectory = lsim(sysc,input.T,time)[-1]
+            trajectory = lsim(sysc,input.T,time,initial_condition)[-1]
             trajectory_list.append(trajectory)
         return trajectory_list
+        
         

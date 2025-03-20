@@ -17,9 +17,9 @@ def make_graph(data,title,legend,impulse,time,log_scale = False): #data should b
     fig.tight_layout()
     
     fig.text(0.5, -0.04, 'Time (ms)', ha='center', fontsize = 20)
-    fig.text(-0.04, 0.175, 'Flux Coil Current (Ampere)', va='center', rotation='vertical', fontsize = 20)
+    fig.text(-0.04, 0.175, 'Flux Coil Current (A)', va='center', rotation='vertical', fontsize = 20)
     fig.text(-0.04, 0.5, 'Capacitor Voltage (V)', va='center', rotation='vertical', fontsize = 20)
-    fig.text(-0.04, 0.825, 'Series Coil Current (Ampere)', va='center', rotation='vertical', fontsize = 20)
+    fig.text(-0.04, 0.825, 'Series Coil Current (A)', va='center', rotation='vertical', fontsize = 20)
     fig.text(.5,1.04,title,ha = 'center',fontsize = 40)
     
     if impulse == False:
@@ -69,5 +69,5 @@ def make_graph(data,title,legend,impulse,time,log_scale = False): #data should b
 
 
 
-    fig.legend(legend, fontsize = 15)
+    fig.legend(legend, fontsize = 15,loc = 'lower right')
     

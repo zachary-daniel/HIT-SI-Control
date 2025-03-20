@@ -38,7 +38,7 @@ r_eigs = eigs(A_rom);
 
 %%
 
-imode = 1;
+imode = 2;
 train= flux_trajectory_arr(1:end,train_len:end);
 
 
@@ -113,8 +113,8 @@ end
 bop_train = train(:,1:length(train)-0);
 bop_time = train_time(1:length(train_time)-0);
 num_trials = 20;
-[w_avg,e_avg,b_avg,atilde_bop] = bop_dmd_func(bop_train,bop_time,r,.9,num_trials,[],[],[e_init],true);
-[w_avg_no_conj,e_avg_no_conj,b_avg_no_conj,atilde_bop_no_conj] = bop_dmd_func(bop_train,bop_time,r,.75,num_trials,[],[],[e_init],[]);
+[w_avg,e_avg,b_avg,~,atilde_bop,~] = bop_dmd_func(bop_train,bop_time,r,.9,num_trials,[],[],[e_init],true);
+[w_avg_no_conj,e_avg_no_conj,b_avg_no_conj,e_var,atilde_bop_no_conj,atilde_cell_list] = bop_dmd_func(bop_train,bop_time,r,.75,num_trials,[],[],[e_init],[]);
 
 %%
 
@@ -176,3 +176,4 @@ disp(OPT_error)
 disp('BOP-DMD no conj LSTSQ error:')
 disp(BOP_no_conj_error)
 
+%% Compute the variance of the eigenvalues from given BOP-DMD run.
